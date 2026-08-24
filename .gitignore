@@ -1,6 +1,10 @@
 # Only the Go backend is tracked in this repo; everything else (Flutter app,
 # infra, etc.) is ignored by default via this allow-list.
 /*
+!/infra
+!/infra/**
+!/frontend
+!/frontend/**
 !/backend
 !/backend/**
 !/.gitignore

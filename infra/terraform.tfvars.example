@@ -1,0 +1,8 @@
+aws_region              = "us-east-1"
+project_name            = "evap"
+environment              = "prod"
+dynamodb_table_name     = "evap_users"
+oauth_ssm_prefix        = "/evap/prod"
+oauth_redirect_base_url = "https://REPLACE_WITH_API_GATEWAY_INVOKE_URL"
+allowed_cors_origins    = ["https://REPLACE_WITH_YOUR_FRONTEND_ORIGIN"]
+github_repository       = "your-org/evap"

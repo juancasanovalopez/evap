@@ -1,0 +1,17 @@
+# Remote state is NOT enabled by default: a local state file keeps this
+# project at true $0 cost when idle and is fine for a single maintainer.
+#
+# Once more than one person applies changes, uncomment this block (and
+# create the S3 bucket + DynamoDB lock table once, e.g. via a small
+# bootstrap script or the AWS console) to avoid state conflicts. Note this
+# introduces a small fixed cost (a few cents/month for S3 storage).
+#
+# terraform {
+#   backend "s3" {
+#     bucket         = "evap-terraform-state"
+#     key            = "evap/terraform.tfstate"
+#     region         = "us-east-1"
+#     dynamodb_table = "evap-terraform-locks"
+#     encrypt        = true
+#   }
+# }

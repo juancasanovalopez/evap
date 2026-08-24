@@ -1,0 +1,16 @@
+# Only the Go backend is tracked in this repo; everything else (Flutter app,
+# infra, etc.) is ignored by default via this allow-list.
+/*
+!/backend
+!/backend/**
+!/.gitignore
+
+# Re-ignore build artifacts and secrets inside backend/ (must come after the
+# negations above so they take precedence).
+backend/dist/
+backend/*.test
+backend/.env
+backend/.env.*
+!backend/.env.example
+*.out
+*.mod.bak

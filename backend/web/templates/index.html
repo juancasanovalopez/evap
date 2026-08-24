@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>evap</title>
+</head>
+<body>
+  {{if .Authenticated}}
+    <p>Hola, {{.Name}}.</p>
+    <a href="/api/v1/private">Ver mi perfil (API)</a>
+  {{else}}
+    <p>No has iniciado sesión.</p>
+    <a href="/login">Iniciar sesión</a>
+  {{end}}
+</body>
+</html>

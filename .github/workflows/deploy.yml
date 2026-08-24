@@ -1,0 +1,127 @@
+name: Deploy backend
+
+on:
+  push:
+    branches: [master]
+    paths: ["backend/**", "infra/**", ".github/workflows/deploy.yml"]
+  pull_request:
+    paths: ["backend/**", "infra/**", ".github/workflows/deploy.yml"]
+
+permissions:
+  contents: read
+  id-token: write # required for AWS OIDC
+
+env:
+  GO_VERSION_FILE: backend/go.mod
+  TF_DIR: infra
+  AWS_REGION: us-east-1
+
+jobs:
+  test:
+    name: Unit & integration tests
+    runs-on: ubuntu-latest
+    services:
+      dynamodb-local:
+        image: amazon/dynamodb-local:latest
+        ports: ["8000:8000"]
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ${{ env.GO_VERSION_FILE }}
+          cache-dependency-path: backend/go.sum
+
+      - name: Unit tests
+        run: go test ./...
+
+      - name: Integration tests (DynamoDB Local)
+        env:
+          DYNAMODB_ENDPOINT: http://localhost:8000
+        run: go test -tags=integration ./test/integration/...
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ${{ env.GO_VERSION_FILE }}
+          cache-dependency-path: backend/go.sum
+
+      - uses: golangci/golangci-lint-action@v6
+        with:
+          working-directory: backend
+
+  terraform-plan:
+    name: Terraform plan (PR only)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    needs: [test, lint]
+    defaults:
+      run:
+        working-directory: infra
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform fmt check
+        run: terraform fmt -check -recursive
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - run: terraform init -input=false
+      - run: terraform validate
+      - run: terraform plan -input=false -var="github_repository=${{ github.repository }}" -var="oauth_redirect_base_url=${{ vars.OAUTH_REDIRECT_BASE_URL }}"
+
+  deploy:
+    name: Build, package & deploy
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    needs: [test, lint]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ${{ env.GO_VERSION_FILE }}
+          cache-dependency-path: backend/go.sum
+
+      - name: Build & package Lambda binary
+        working-directory: backend
+        run: make package
+
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform apply
+        working-directory: infra
+        run: |
+          terraform init -input=false
+          terraform apply -input=false -auto-approve \
+            -var="github_repository=${{ github.repository }}" \
+            -var="oauth_redirect_base_url=${{ vars.OAUTH_REDIRECT_BASE_URL }}"
+
+      - name: Smoke test
+        working-directory: infra
+        run: |
+          endpoint=$(terraform output -raw api_endpoint)
+          curl --fail --silent --show-error "$endpoint/health"

@@ -1,20 +1,25 @@
-# Only the Go backend is tracked in this repo; everything else (Flutter app,
-# infra, etc.) is ignored by default via this allow-list.
+# Allow-list the repository content we intentionally track: backend code,
+# Terraform for AWS deployment, and the GitHub Actions workflow.
 /*
-!/infra
-!/infra/**
-!/frontend
-!/frontend/**
 !/backend
 !/backend/**
+!/infra
+!/infra/**
+!/.github
+!/.github/**
+!/README.md
 !/.gitignore
 
-# Re-ignore build artifacts and secrets inside backend/ (must come after the
-# negations above so they take precedence).
+# Re-ignore generated and sensitive artifacts after the allow-list above.
 backend/dist/
 backend/*.test
 backend/.env
 backend/.env.*
 !backend/.env.example
+infra/.terraform/
+infra/*.tfstate
+infra/*.tfstate.*
+infra/terraform.tfvars
+infra/*.tfplan
 *.out
 *.mod.bak

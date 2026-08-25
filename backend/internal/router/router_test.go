@@ -59,3 +59,17 @@ func TestRouter_PrivateWithValidTokenSucceeds(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, rec.Code)
 }
+
+func TestRouter_SimulateRequiresAuth(t *testing.T) {
+	r := New(Deps{
+		Config: &config.Config{AllowedCORSOrigins: []string{"http://localhost"}},
+		Users:  store.NewMemoryUserRepository(),
+		Issuer: auth.NewTokenIssuer("k", time.Hour),
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/simulate?area=32&profundidad=1.2&lat=40.4167&lon=-3.7037&fecha_inicio=2025-07-15&fecha_fin=2025-07-17", nil)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusUnauthorized, rec.Code)
+}

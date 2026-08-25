@@ -60,6 +60,7 @@ func New(deps Deps) *chi.Mux {
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Use(appmw.JWTAuth(deps.Issuer))
 		r.Get("/private", handlers.Private)
+		r.Get("/simulate", handlers.Simulate)
 	})
 
 	return r

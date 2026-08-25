@@ -3,6 +3,8 @@
 package router
 
 import (
+	"io/fs"
+	"net/http"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -13,6 +15,7 @@ import (
 	"evap-backend/internal/handlers"
 	appmw "evap-backend/internal/middleware"
 	"evap-backend/internal/store"
+	"evap-backend/web"
 )
 
 // Deps holds the dependencies required to build the router.
@@ -45,6 +48,12 @@ func New(deps Deps) *chi.Mux {
 	r.Use(appmw.RateLimit(5, 10)) // 5 req/s sustained, burst of 10, per client IP.
 
 	r.Get("/health", handlers.Health)
+
+	staticFS, err := fs.Sub(web.Static, "static")
+	if err != nil {
+		panic(err)
+	}
+	r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.FS(staticFS))))
 
 	r.Group(func(r chi.Router) {
 		r.Use(appmw.OptionalJWTAuth(deps.Issuer))

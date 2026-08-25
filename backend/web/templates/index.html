@@ -2,15 +2,206 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>evap</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>evap | Dashboard</title>
+  <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-  {{if .Authenticated}}
-    <p>Hola, {{.Name}}.</p>
-    <a href="/api/v1/private">Ver mi perfil (API)</a>
-  {{else}}
-    <p>No has iniciado sesión.</p>
-    <a href="/login">Iniciar sesión</a>
-  {{end}}
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">E</span>
+        <div>
+          <div class="brand-kicker">evap</div>
+          <h1>Dashboard de evaporación</h1>
+        </div>
+      </div>
+
+      <nav class="header-actions">
+        {{if .Authenticated}}
+          <span class="user-pill">Hola, {{.Name}}</span>
+          <a class="button ghost" href="/api/v1/private">Mi perfil</a>
+        {{else}}
+          <a class="button primary" href="/login">Iniciar sesión</a>
+        {{end}}
+      </nav>
+    </header>
+
+    <main class="dashboard">
+      {{if .Authenticated}}
+        <section class="panel hero-panel">
+          <div>
+            <p class="eyebrow">Estado del sistema</p>
+            <h2>Simulación interactiva en tiempo real</h2>
+          </div>
+          <div class="hero-stats">
+            <div class="stat-card">
+              <span>Pérdida diaria</span>
+              <strong id="hero-daily-mm">0.00 mm</strong>
+            </div>
+            <div class="stat-card">
+              <span>Volumen</span>
+              <strong id="hero-liters">0.0 L</strong>
+            </div>
+            <div class="stat-card">
+              <span>Superficie</span>
+              <strong id="hero-area">0.0 m²</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel dashboard-grid">
+          <div class="form-panel">
+            <div class="panel-header">
+              <h3>Parámetros</h3>
+            </div>
+
+            <form id="simulation-form" class="simulation-form">
+              <div class="field-group">
+                <label for="poolName">Nombre de la piscina</label>
+                <input id="poolName" name="poolName" type="text" value="Piscina principal" />
+              </div>
+
+              <div class="field-row two-col">
+                <div class="field-group">
+                  <label for="area">Superficie (m²)</label>
+                  <input id="area" name="area" type="number" min="10" step="0.1" value="32" />
+                </div>
+                <div class="field-group">
+                  <label for="depth">Profundidad (m)</label>
+                  <input id="depth" name="depth" type="number" min="0.5" step="0.1" value="1.2" />
+                </div>
+              </div>
+
+              <div class="field-row two-col">
+                <div class="field-group">
+                  <label for="waterTemp">Temperatura del agua (°C)</label>
+                  <input id="waterTemp" name="waterTemp" type="number" min="5" max="40" step="0.1" value="24" />
+                </div>
+                <div class="field-group">
+                  <label for="airTemp">Temperatura del aire (°C)</label>
+                  <input id="airTemp" name="airTemp" type="number" min="-10" max="50" step="0.1" value="30" />
+                </div>
+              </div>
+
+              <div class="field-row two-col">
+                <div class="field-group">
+                  <label for="humidity">Humedad relativa (%)</label>
+                  <input id="humidity" name="humidity" type="number" min="10" max="100" step="1" value="45" />
+                </div>
+                <div class="field-group">
+                  <label for="wind">Viento (m/s)</label>
+                  <input id="wind" name="wind" type="number" min="0" max="20" step="0.1" value="2.0" />
+                </div>
+              </div>
+
+              <div class="field-group">
+                <label for="solar">Radiación solar (W/m²)</label>
+                <input id="solar" name="solar" type="number" min="0" max="1000" step="1" value="600" />
+              </div>
+            </form>
+          </div>
+
+          <aside class="result-panel panel">
+            <div class="panel-header">
+              <h3>Resultado</h3>
+            </div>
+
+            <div class="result-stack">
+              <div class="result-line">
+                <span>Evaporación diaria</span>
+                <strong id="daily-mm">0.00 mm</strong>
+              </div>
+              <div class="result-line">
+                <span>Volumen evaporado</span>
+                <strong id="daily-liters">0.0 L</strong>
+              </div>
+              <div class="result-line">
+                <span>Superficie</span>
+                <strong id="surface-area">0.0 m²</strong>
+              </div>
+              <div class="result-line">
+                <span>Condición climática</span>
+                <strong id="climate-state">Estable</strong>
+              </div>
+            </div>
+
+            <div class="meter-group">
+              <div class="meter-label-row">
+                <span>Intensidad solar</span>
+                <span id="solar-percent">0%</span>
+              </div>
+              <div class="meter"><span id="solar-meter"></span></div>
+            </div>
+
+            <div class="meter-group">
+              <div class="meter-label-row">
+                <span>Humedad</span>
+                <span id="humidity-percent">0%</span>
+              </div>
+              <div class="meter secondary"><span id="humidity-meter"></span></div>
+            </div>
+          </aside>
+        </section>
+      {{else}}
+        <section class="panel empty-state">
+          <p class="eyebrow">Bienvenido</p>
+          <h2>Tu análisis climático, más claro y más rápido.</h2>
+          <p>
+            Inicia sesión para acceder al dashboard completo y comprobar la pérdida de agua de tu piscina en tiempo real.
+          </p>
+          <a class="button primary large" href="/login">Iniciar sesión</a>
+        </section>
+      {{end}}
+    </main>
+  </div>
+
+  <script>
+    function parseNumeric(id, fallback) {
+      const value = Number(document.getElementById(id)?.value ?? fallback);
+      return Number.isFinite(value) ? value : fallback;
+    }
+
+    function updateSimulation() {
+      const area = parseNumeric('area', 32);
+      const waterTemp = parseNumeric('waterTemp', 24);
+      const airTemp = parseNumeric('airTemp', 30);
+      const humidity = parseNumeric('humidity', 45);
+      const wind = parseNumeric('wind', 2);
+      const solar = parseNumeric('solar', 600);
+
+      const satWater = 0.6108 * Math.exp((17.27 * waterTemp) / (waterTemp + 237.3));
+      const satAir = 0.6108 * Math.exp((17.27 * airTemp) / (airTemp + 237.3));
+      const partialAir = satAir * (humidity / 100);
+      const vaporDeficit = Math.max(0, satWater - partialAir);
+      const convective = (0.089 + 0.078 * wind) * vaporDeficit;
+      const solarFactor = solar / 1000;
+      const solarContribution = solarFactor * 3.2;
+      const dailyMm = Math.max(0, (convective + solarContribution) * 24);
+      const litersPerDay = area * dailyMm;
+
+      const climateState = humidity > 70 ? 'Humedo' : humidity < 35 ? 'Seco' : 'Estable';
+      const solarPercent = Math.min(100, (solar / 1000) * 100);
+      const humidityPercent = Math.min(100, humidity);
+
+      document.getElementById('daily-mm').textContent = `${dailyMm.toFixed(2)} mm`;
+      document.getElementById('daily-liters').textContent = `${litersPerDay.toFixed(1)} L`;
+      document.getElementById('surface-area').textContent = `${area.toFixed(1)} m²`;
+      document.getElementById('climate-state').textContent = climateState;
+      document.getElementById('hero-daily-mm').textContent = `${dailyMm.toFixed(2)} mm`;
+      document.getElementById('hero-liters').textContent = `${litersPerDay.toFixed(1)} L`;
+      document.getElementById('hero-area').textContent = `${area.toFixed(1)} m²`;
+      document.getElementById('solar-percent').textContent = `${Math.round(solarPercent)}%`;
+      document.getElementById('humidity-percent').textContent = `${Math.round(humidityPercent)}%`;
+      document.getElementById('solar-meter').style.width = `${solarPercent}%`;
+      document.getElementById('humidity-meter').style.width = `${humidityPercent}%`;
+    }
+
+    const form = document.getElementById('simulation-form');
+    if (form) {
+      form.addEventListener('input', updateSimulation);
+      updateSimulation();
+    }
+  </script>
 </body>
 </html>

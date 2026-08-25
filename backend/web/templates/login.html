@@ -2,12 +2,22 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Iniciar sesión - evap</title>
+  <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-  <h1>Iniciar sesión</h1>
-  <a href="/auth/google/login">Continuar con Google</a>
-  <br>
-  <a href="/auth/github/login">Continuar con GitHub</a>
+  <div class="auth-shell">
+    <section class="panel auth-panel">
+      <p class="eyebrow">evap</p>
+      <h1>Accede a tu dashboard</h1>
+      <p class="auth-copy">Gestiona la simulación de evaporación y consulta tus métricas con un flujo seguro.</p>
+
+      <div class="auth-actions">
+        <a class="button primary large" href="/auth/google/login">Continuar con Google</a>
+        <a class="button ghost large" href="/auth/github/login">Continuar con GitHub</a>
+      </div>
+    </section>
+  </div>
 </body>
 </html>

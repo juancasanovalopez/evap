@@ -1,5 +1,5 @@
 # GitHub Actions OIDC provider + a deploy role scoped to this repository's
-# main branch, so CI never needs long-lived AWS access keys.
+# master branch, so CI never needs long-lived AWS access keys.
 
 data "tls_certificate" "github" {
   url = "https://token.actions.githubusercontent.com/.well-known/openid-configuration"
@@ -29,7 +29,7 @@ data "aws_iam_policy_document" "github_actions_assume_role" {
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repository}:ref:refs/heads/main"]
+      values   = ["repo:${var.github_repository}:ref:refs/heads/master"]
     }
   }
 }

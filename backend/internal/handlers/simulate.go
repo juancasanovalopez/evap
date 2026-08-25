@@ -71,7 +71,7 @@ var WeatherForecastFetcher = func(ctx context.Context, lat, lon float64, startDa
 	if err != nil {
 		return OpenMeteoResponse{}, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return OpenMeteoResponse{}, fmt.Errorf("meteorological provider returned %d", resp.StatusCode)

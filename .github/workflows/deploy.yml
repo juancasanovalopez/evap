@@ -57,8 +57,9 @@ jobs:
           go-version-file: ${{ env.GO_VERSION_FILE }}
           cache-dependency-path: backend/go.sum
 
-      - uses: golangci/golangci-lint-action@v6
+      - uses: golangci/golangci-lint-action@v8
         with:
+          version: v2.4.0
           working-directory: backend
 
   terraform-plan:

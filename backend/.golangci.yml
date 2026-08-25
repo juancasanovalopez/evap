@@ -10,12 +10,11 @@ linters:
     - ineffassign
     - staticcheck
     - unused
+  exclusions:
+    paths:
+      - test/integration
 
 formatters:
   enable:
     - gofmt
     - goimports
-
-issues:
-  exclude-dirs:
-    - test/integration

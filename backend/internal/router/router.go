@@ -43,7 +43,7 @@ func New(deps Deps) *chi.Mux {
 	}
 
 	r := chi.NewRouter()
-	r.Use(chimw.RequestID, chimw.RealIP, chimw.Recoverer, chimw.Logger)
+	r.Use(chimw.RequestID, chimw.Recoverer, chimw.Logger)
 	r.Use(appmw.CORS(deps.Config.AllowedCORSOrigins))
 	r.Use(appmw.RateLimit(5, 10)) // 5 req/s sustained, burst of 10, per client IP.
 

@@ -1,4 +1,4 @@
-SHELL := /bin/zsh
+SHELL := /bin/sh
 GOOS ?= linux
 GOARCH ?= arm64
 BINARY := bootstrap

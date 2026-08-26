@@ -29,7 +29,13 @@ data "aws_iam_policy_document" "github_actions_assume_role" {
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repository}:ref:refs/heads/master"]
+      values = [
+        "repo:${var.github_repository}:ref:refs/heads/master",
+        # GitHub can append immutable owner/repo IDs to the subject
+        # (repo:owner@ownerId/repo@repoId:ref:...) to prevent namespace
+        # squatting after a rename/transfer; match that shape too.
+        "repo:${split("/", var.github_repository)[0]}@*/${split("/", var.github_repository)[1]}@*:ref:refs/heads/master",
+      ]
     }
   }
 }

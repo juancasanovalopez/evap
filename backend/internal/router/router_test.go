@@ -73,3 +73,38 @@ func TestRouter_SimulateRequiresAuth(t *testing.T) {
 
 	require.Equal(t, http.StatusUnauthorized, rec.Code)
 }
+
+func TestRouter_IndexRedirectsAnonymousToLogin(t *testing.T) {
+	r := New(Deps{
+		Config: &config.Config{AllowedCORSOrigins: []string{"http://localhost"}},
+		Users:  store.NewMemoryUserRepository(),
+		Issuer: auth.NewTokenIssuer("k", time.Hour),
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusFound, rec.Code)
+	require.Equal(t, "/login", rec.Header().Get("Location"))
+}
+
+func TestRouter_ServesVendoredStaticAssets(t *testing.T) {
+	r := New(Deps{
+		Config: &config.Config{AllowedCORSOrigins: []string{"http://localhost"}},
+		Users:  store.NewMemoryUserRepository(),
+		Issuer: auth.NewTokenIssuer("k", time.Hour),
+	})
+
+	for _, path := range []string{
+		"/static/vendor/leaflet/leaflet.js",
+		"/static/vendor/leaflet/leaflet.css",
+		"/static/vendor/chartjs/chart.umd.min.js",
+		"/static/js/dashboard.js",
+	} {
+		req := httptest.NewRequest(http.MethodGet, path, nil)
+		rec := httptest.NewRecorder()
+		r.ServeHTTP(rec, req)
+		require.Equalf(t, http.StatusOK, rec.Code, "expected %s to be served", path)
+	}
+}

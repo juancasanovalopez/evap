@@ -42,4 +42,13 @@ func TestSimulateHappyPath(t *testing.T) {
 	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &result))
 	require.Contains(t, result, "litros_totales_perdidos")
 	require.Contains(t, result, "reporte_horario")
+
+	reporte, ok := result["reporte_horario"].([]interface{})
+	require.True(t, ok)
+	require.NotEmpty(t, reporte)
+	primeraHora, ok := reporte[0].(map[string]interface{})
+	require.True(t, ok)
+	require.Contains(t, primeraHora, "temperatura_aire")
+	require.Contains(t, primeraHora, "humedad_relativa")
+	require.Contains(t, primeraHora, "viento_kmh")
 }

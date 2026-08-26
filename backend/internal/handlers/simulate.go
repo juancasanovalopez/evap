@@ -42,12 +42,15 @@ type SimulacionResult struct {
 
 // HoraDataCell holds per-hour calculation details.
 type HoraDataCell struct {
-	HoraIndex      int     `json:"hora_index"`
-	Timestamp      string  `json:"timestamp"`
-	TaguaCalculada float64 `json:"t_agua_calculada"`
-	RadiacionSolar float64 `json:"radiacion_solar"`
-	EvapLitrosHora float64 `json:"evap_litros_hora"`
-	EvapMmHora     float64 `json:"evap_mm_hora"`
+	HoraIndex       int     `json:"hora_index"`
+	Timestamp       string  `json:"timestamp"`
+	TaguaCalculada  float64 `json:"t_agua_calculada"`
+	TemperaturaAire float64 `json:"temperatura_aire"`
+	HumedadRelativa float64 `json:"humedad_relativa"`
+	VientoKmh       float64 `json:"viento_kmh"`
+	RadiacionSolar  float64 `json:"radiacion_solar"`
+	EvapLitrosHora  float64 `json:"evap_litros_hora"`
+	EvapMmHora      float64 `json:"evap_mm_hora"`
 }
 
 // WeatherForecastFetcher is injected so tests can stub the provider call.
@@ -165,12 +168,15 @@ func Simulate(w http.ResponseWriter, r *http.Request) {
 		mmTotalesDescendidos += evapMmHora
 
 		reporteHorario = append(reporteHorario, HoraDataCell{
-			HoraIndex:      p + 1,
-			Timestamp:      climaData.Hourly.Time[p],
-			TaguaCalculada: math.Round(tAguaActual*100) / 100,
-			RadiacionSolar: gSolar,
-			EvapLitrosHora: math.Round(evapLitrosHora*100) / 100,
-			EvapMmHora:     math.Round(evapMmHora*1000) / 1000,
+			HoraIndex:       p + 1,
+			Timestamp:       climaData.Hourly.Time[p],
+			TaguaCalculada:  math.Round(tAguaActual*100) / 100,
+			TemperaturaAire: tAireInst,
+			HumedadRelativa: hrInst,
+			VientoKmh:       climaData.Hourly.WindSpeed10m[p],
+			RadiacionSolar:  gSolar,
+			EvapLitrosHora:  math.Round(evapLitrosHora*100) / 100,
+			EvapMmHora:      math.Round(evapMmHora*1000) / 1000,
 		})
 	}
 

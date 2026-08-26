@@ -11,19 +11,18 @@ import (
 var pageTemplates = template.Must(template.ParseFS(web.Templates, "templates/*.html"))
 
 type indexPageData struct {
-	Authenticated bool
-	Name          string
+	Name string
 }
 
-// Index renders the SSR home page, greeting the user if they have a valid
-// session cookie. Mount behind middleware.OptionalJWTAuth so claims are
-// populated when present, without requiring authentication.
+// Index renders the SSR dashboard, requiring an authenticated session.
+// Unauthenticated visitors are redirected to /login.
 func Index(w http.ResponseWriter, r *http.Request) {
-	data := indexPageData{}
-	if claims, ok := middleware.ClaimsFromContext(r.Context()); ok {
-		data.Authenticated = true
-		data.Name = claims.Name
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
 	}
+	data := indexPageData{Name: claims.Name}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := pageTemplates.ExecuteTemplate(w, "index.html", data); err != nil {
 		http.Error(w, "failed to render page", http.StatusInternalServerError)

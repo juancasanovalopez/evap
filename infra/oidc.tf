@@ -47,6 +47,12 @@ resource "aws_iam_role" "github_actions_deploy" {
 
 # Scoped to exactly the resources this project's Terraform manages - never
 # AdministratorAccess.
+#
+# Constructed ARNs are used instead of resource references to break circular
+# Terraform dependencies: on first apply the target resources do not exist in
+# state yet, so referencing their .arn attributes would force Terraform to
+# create them before attaching the policy - but creating them requires the
+# policy to already be attached.
 data "aws_iam_policy_document" "github_actions_permissions" {
   statement {
     sid = "ManageLambda"
@@ -62,37 +68,93 @@ data "aws_iam_policy_document" "github_actions_permissions" {
       "lambda:TagResource",
       "lambda:ListTags",
     ]
-    resources = [aws_lambda_function.api.arn]
+    resources = ["arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-api"]
   }
 
   statement {
-    sid       = "ManageApiGateway"
-    actions   = ["apigateway:*"]
-    resources = ["arn:aws:apigateway:${data.aws_region.current.name}::/apis/*"]
+    sid     = "ManageApiGateway"
+    actions = ["apigateway:*"]
+    # Wildcard covers /v2/apis/*, /tags/*, integrations, routes, stages, etc.
+    # The previous /apis/* pattern missed /v2/apis/* and /tags/* (used for
+    # tag operations), causing AccessDenied on CreateApi with tags.
+    resources = ["arn:aws:apigateway:${data.aws_region.current.name}::/*"]
   }
 
   statement {
-    sid       = "ManageDynamoDBTable"
-    actions   = ["dynamodb:DescribeTable", "dynamodb:CreateTable", "dynamodb:UpdateTable", "dynamodb:DeleteTable", "dynamodb:TagResource"]
-    resources = [aws_dynamodb_table.users.arn]
+    sid = "ManageDynamoDBTable"
+    actions = [
+      "dynamodb:DescribeTable",
+      "dynamodb:CreateTable",
+      "dynamodb:UpdateTable",
+      "dynamodb:DeleteTable",
+      "dynamodb:TagResource",
+    ]
+    resources = ["arn:aws:dynamodb:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:table/${var.dynamodb_table_name}"]
   }
 
   statement {
-    sid       = "ManageSSMParameters"
-    actions   = ["ssm:GetParameter", "ssm:GetParameters", "ssm:PutParameter", "ssm:DescribeParameters", "ssm:AddTagsToResource"]
-    resources = [for p in aws_ssm_parameter.oauth_secrets : p.arn]
+    sid = "ManageSSMParameters"
+    actions = [
+      "ssm:GetParameter",
+      "ssm:GetParameters",
+      "ssm:PutParameter",
+      "ssm:DeleteParameter",
+      "ssm:DescribeParameters",
+      "ssm:AddTagsToResource",
+    ]
+    resources = ["arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter${var.oauth_ssm_prefix}/*"]
   }
 
   statement {
-    sid       = "ManageLambdaRoleAndLogs"
-    actions   = ["iam:GetRole", "iam:PassRole", "iam:GetRolePolicy", "iam:PutRolePolicy"]
-    resources = [aws_iam_role.lambda_exec.arn]
+    sid = "ManageLambdaRole"
+    actions = [
+      "iam:GetRole",
+      "iam:CreateRole",
+      "iam:DeleteRole",
+      "iam:PassRole",
+      "iam:GetRolePolicy",
+      "iam:PutRolePolicy",
+      "iam:DeleteRolePolicy",
+      "iam:TagRole",
+    ]
+    resources = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.project_name}-lambda-exec"]
   }
 
   statement {
-    sid       = "ManageLogGroup"
-    actions   = ["logs:DescribeLogGroups", "logs:PutRetentionPolicy", "logs:TagResource"]
-    resources = [aws_cloudwatch_log_group.lambda.arn]
+    sid = "ManageLogGroup"
+    actions = [
+      "logs:CreateLogGroup",
+      "logs:DeleteLogGroup",
+      "logs:DescribeLogGroups",
+      "logs:PutRetentionPolicy",
+      "logs:TagResource",
+    ]
+    resources = ["arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.project_name}-api"]
+  }
+
+  statement {
+    sid = "ManageOIDCProvider"
+    actions = [
+      "iam:CreateOpenIDConnectProvider",
+      "iam:GetOpenIDConnectProvider",
+      "iam:UpdateOpenIDConnectProvider",
+      "iam:DeleteOpenIDConnectProvider",
+      "iam:TagOpenIDConnectProvider",
+    ]
+    resources = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/token.actions.githubusercontent.com"]
+  }
+
+  # Allows subsequent applies to update this role's own policy document.
+  statement {
+    sid = "ManageDeployRole"
+    actions = [
+      "iam:GetRole",
+      "iam:GetRolePolicy",
+      "iam:PutRolePolicy",
+      "iam:DeleteRolePolicy",
+      "iam:TagRole",
+    ]
+    resources = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.project_name}-github-actions-deploy"]
   }
 }
 

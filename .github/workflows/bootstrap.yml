@@ -1,0 +1,90 @@
+name: Bootstrap (first-time infra apply)
+
+# Run ONCE manually to create the OIDC provider + deploy role so that the
+# normal deploy.yml workflow can take over afterwards.
+# After a successful run: delete BOOTSTRAP_AWS_* secrets from GitHub.
+on:
+  workflow_dispatch:
+    inputs:
+      github_repository:
+        description: "GitHub repository (org/repo)"
+        required: true
+        default: "juancasanovalopez/evap"
+      oauth_redirect_base_url:
+        description: "Base URL for OAuth redirects (can be 'https://TEMP' — update after apply)"
+        required: true
+        default: "https://TEMP"
+      allowed_cors_origins:
+        description: "Comma-separated CORS origins (leave empty if unknown yet)"
+        required: false
+        default: ""
+
+env:
+  GO_VERSION_FILE: backend/go.mod
+  TF_DIR: infra
+  AWS_REGION: us-east-1
+
+jobs:
+  bootstrap:
+    name: Bootstrap infra (admin credentials)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ${{ env.GO_VERSION_FILE }}
+          cache-dependency-path: backend/go.sum
+
+      - name: Build & package Lambda binary
+        working-directory: backend
+        run: make package
+
+      - uses: hashicorp/setup-terraform@v3
+
+      # Uses long-lived admin IAM access keys stored as GitHub secrets.
+      # These secrets are ONLY needed for this bootstrap run.
+      - name: Configure AWS credentials (admin keys)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.BOOTSTRAP_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.BOOTSTRAP_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform init
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform init -input=false
+
+      - name: Terraform validate
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform validate
+
+      - name: Terraform apply
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          CORS_VAR=""
+          if [ -n "${{ github.event.inputs.allowed_cors_origins }}" ]; then
+            # Convert comma-separated string to HCL list
+            CORS_LIST=$(echo '${{ github.event.inputs.allowed_cors_origins }}' \
+              | tr ',' '\n' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//' \
+              | awk '{printf "\"%s\",",$0}' | sed 's/,$//')
+            CORS_VAR="-var=allowed_cors_origins=[${CORS_LIST}]"
+          fi
+          terraform apply -input=false -auto-approve \
+            -var="github_repository=${{ github.event.inputs.github_repository }}" \
+            -var="oauth_redirect_base_url=${{ github.event.inputs.oauth_redirect_base_url }}" \
+            $CORS_VAR
+
+      - name: Print outputs
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          echo "============================================"
+          echo "IMPORTANT: copy these values before closing"
+          echo "============================================"
+          terraform output
+          echo ""
+          echo "Next steps:"
+          echo "  1. Set GitHub secret  AWS_DEPLOY_ROLE_ARN = $(terraform output -raw github_actions_role_arn)"
+          echo "  2. Set GitHub variable OAUTH_REDIRECT_BASE_URL = $(terraform output -raw api_endpoint)"
+          echo "  3. Re-run terraform apply (or push a commit) with the real oauth_redirect_base_url"
+          echo "  4. Delete secrets BOOTSTRAP_AWS_ACCESS_KEY_ID and BOOTSTRAP_AWS_SECRET_ACCESS_KEY"

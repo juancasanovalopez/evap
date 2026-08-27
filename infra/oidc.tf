@@ -137,7 +137,6 @@ data "aws_iam_policy_document" "github_actions_permissions" {
     actions = [
       "iam:CreateOpenIDConnectProvider",
       "iam:GetOpenIDConnectProvider",
-      "iam:UpdateOpenIDConnectProvider",
       "iam:DeleteOpenIDConnectProvider",
       "iam:TagOpenIDConnectProvider",
     ]

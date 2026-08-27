@@ -59,6 +59,54 @@ jobs:
         working-directory: ${{ env.TF_DIR }}
         run: terraform validate
 
+      - name: Import existing resources (idempotent re-run)
+        working-directory: ${{ env.TF_DIR }}
+        env:
+          TF_VAR_github_repository: ${{ github.event.inputs.github_repository }}
+          TF_VAR_oauth_redirect_base_url: ${{ github.event.inputs.oauth_redirect_base_url }}
+        run: |
+          # Create log group without tags to avoid logs:TagResource permission requirement.
+          aws logs create-log-group --log-group-name "/aws/lambda/evap-api" 2>/dev/null || true
+
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+
+          terraform import aws_cloudwatch_log_group.lambda /aws/lambda/evap-api || true
+          terraform import aws_dynamodb_table.users evap_users || true
+          terraform import aws_iam_role.lambda_exec evap-lambda-exec || true
+          terraform import aws_iam_role_policy.lambda_permissions evap-lambda-exec:evap-lambda-permissions || true
+          terraform import aws_iam_role.github_actions_deploy evap-github-actions-deploy || true
+          terraform import aws_iam_role_policy.github_actions_permissions evap-github-actions-deploy:evap-github-actions-permissions || true
+          terraform import aws_iam_openid_connect_provider.github \
+            "arn:aws:iam::${ACCOUNT_ID}:oidc-provider/token.actions.githubusercontent.com" || true
+          terraform import 'aws_ssm_parameter.oauth_secrets["jwt_signing_key"]'      /evap/prod/jwt_signing_key || true
+          terraform import 'aws_ssm_parameter.oauth_secrets["google_client_id"]'     /evap/prod/google_client_id || true
+          terraform import 'aws_ssm_parameter.oauth_secrets["google_client_secret"]' /evap/prod/google_client_secret || true
+          terraform import 'aws_ssm_parameter.oauth_secrets["github_client_id"]'     /evap/prod/github_client_id || true
+          terraform import 'aws_ssm_parameter.oauth_secrets["github_client_secret"]' /evap/prod/github_client_secret || true
+          terraform import aws_lambda_function.api evap-api || true
+          terraform import aws_lambda_permission.apigw_invoke evap-api/AllowAPIGatewayInvoke || true
+
+          # API Gateway resources use random IDs — look them up dynamically.
+          API_ID=$(aws apigatewayv2 get-apis \
+            --query "Items[?Name=='evap-api'].ApiId" --output text 2>/dev/null || true)
+          if [ -n "$API_ID" ] && [ "$API_ID" != "None" ]; then
+            terraform import aws_apigatewayv2_api.http_api "$API_ID" || true
+
+            INTEGRATION_ID=$(aws apigatewayv2 get-integrations --api-id "$API_ID" \
+              --query "Items[0].IntegrationId" --output text 2>/dev/null || true)
+            if [ -n "$INTEGRATION_ID" ] && [ "$INTEGRATION_ID" != "None" ]; then
+              terraform import aws_apigatewayv2_integration.lambda "${API_ID}/${INTEGRATION_ID}" || true
+            fi
+
+            ROUTE_ID=$(aws apigatewayv2 get-routes --api-id "$API_ID" \
+              --query "Items[0].RouteId" --output text 2>/dev/null || true)
+            if [ -n "$ROUTE_ID" ] && [ "$ROUTE_ID" != "None" ]; then
+              terraform import aws_apigatewayv2_route.default "${API_ID}/${ROUTE_ID}" || true
+            fi
+
+            terraform import aws_apigatewayv2_stage.default "${API_ID}/\$default" || true
+          fi
+
       - name: Terraform apply
         working-directory: ${{ env.TF_DIR }}
         run: |

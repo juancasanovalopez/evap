@@ -1,6 +1,13 @@
 resource "aws_cloudwatch_log_group" "lambda" {
   name              = "/aws/lambda/${var.project_name}-api"
   retention_in_days = var.log_retention_days
+
+  # Pre-created by CI via aws logs create-log-group (no tags) to avoid the
+  # logs:TagResource permission that provider 5.x requires when default_tags
+  # are set. Ignore tag drift so apply never calls logs:TagResource.
+  lifecycle {
+    ignore_changes = [tags_all]
+  }
 }
 
 resource "aws_lambda_function" "api" {

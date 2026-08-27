@@ -23,4 +23,5 @@ resource "aws_ssm_parameter" "oauth_secrets" {
   lifecycle {
     ignore_changes = [value]
   }
+  overwrite = true 
 }

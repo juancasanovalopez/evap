@@ -129,7 +129,10 @@ data "aws_iam_policy_document" "github_actions_permissions" {
       "logs:PutRetentionPolicy",
       "logs:TagResource",
     ]
-    resources = ["arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.project_name}-api"]
+    resources = [
+      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.project_name}-api",
+      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.project_name}-api:*"
+      ]
   }
 
   statement {
@@ -147,6 +150,7 @@ data "aws_iam_policy_document" "github_actions_permissions" {
   statement {
     sid = "ManageDeployRole"
     actions = [
+      "iam:CreateRole",
       "iam:GetRole",
       "iam:GetRolePolicy",
       "iam:PutRolePolicy",

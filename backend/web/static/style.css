@@ -128,8 +128,9 @@ input {
 
 .hero-panel {
   display: flex;
+  flex-direction: column;
   justify-content: space-between;
-  align-items: end;
+  align-items: stretch;
   gap: 20px;
 }
 
@@ -141,9 +142,9 @@ input {
 
 .hero-stats {
   display: grid;
-  grid-template-columns: repeat(3, minmax(120px, 1fr));
+  grid-template-columns: 1fr;
   gap: 12px;
-  min-width: min(100%, 470px);
+  min-width: 0;
 }
 
 .stat-card {
@@ -255,7 +256,7 @@ input {
 }
 
 .two-col {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
 }
 
 .field-group {
@@ -382,21 +383,8 @@ input:focus {
 }
 
 @media (min-width: 768px) {
-  .location-layout {
-    flex-direction: row;
-  }
-
   .map-container {
-    flex: 1.4;
     height: 340px;
-  }
-
-  .location-side {
-    flex: 1;
-  }
-
-  .charts-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

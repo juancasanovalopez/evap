@@ -61,6 +61,8 @@ jobs:
         with:
           version: v2.4.0
           working-directory: backend
+          # `config verify` descarga el JSON schema remoto y falla si la red del runner no lo alcanza.
+          verify: false
 
   terraform-plan:
     name: Terraform plan (PR only)

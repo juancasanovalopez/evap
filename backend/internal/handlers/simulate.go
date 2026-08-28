@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -238,25 +239,25 @@ func resolveDateRange(rawStart, rawEnd string, today time.Time) (string, string,
 
 	start, err := time.Parse(dateLayout, rawStart)
 	if err != nil {
-		return "", "", fmt.Errorf("Fecha de inicio inválida, se espera AAAA-MM-DD.")
+		return "", "", errors.New("fecha de inicio inválida, se espera AAAA-MM-DD")
 	}
 	end, err := time.Parse(dateLayout, rawEnd)
 	if err != nil {
-		return "", "", fmt.Errorf("Fecha de fin inválida, se espera AAAA-MM-DD.")
+		return "", "", errors.New("fecha de fin inválida, se espera AAAA-MM-DD")
 	}
 	if end.Before(start) {
-		return "", "", fmt.Errorf("La fecha de fin debe ser posterior a la de inicio.")
+		return "", "", errors.New("la fecha de fin debe ser posterior a la de inicio")
 	}
 	if end.Sub(start) > maxRangeDays*24*time.Hour {
-		return "", "", fmt.Errorf("El rango de fechas no puede superar %d días.", maxRangeDays)
+		return "", "", fmt.Errorf("el rango de fechas no puede superar %d días", maxRangeDays)
 	}
 	if end.After(today.AddDate(0, 0, forecastAhead)) {
-		return "", "", fmt.Errorf("No hay predicción disponible más allá de %d días desde hoy.", forecastAhead)
+		return "", "", fmt.Errorf("no hay predicción disponible más allá de %d días desde hoy", forecastAhead)
 	}
 	// A range served by the forecast endpoint cannot reach further back than its
 	// own history window; older starts must end inside the archive window too.
 	if weatherEndpoint(end, today) == forecastAPI && start.Before(today.AddDate(0, 0, -forecastPastMax)) {
-		return "", "", fmt.Errorf("El rango es demasiado amplio: separa las fechas históricas (más de %d días) de las recientes.", forecastPastMax)
+		return "", "", fmt.Errorf("el rango es demasiado amplio: separa las fechas históricas (más de %d días) de las recientes", forecastPastMax)
 	}
 	return start.Format(dateLayout), end.Format(dateLayout), nil
 }

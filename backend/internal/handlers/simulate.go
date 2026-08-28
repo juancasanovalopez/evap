@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"math"
 	"net/http"
 	"net/url"
@@ -19,6 +20,18 @@ const (
 	cpAgua       = 4186.0
 	sigma        = 5.67e-8
 	tAguaInicial = 20.0
+
+	dateLayout = "2006-01-02"
+
+	forecastAPI = "https://api.open-meteo.com/v1/forecast"
+	archiveAPI  = "https://archive-api.open-meteo.com/v1/archive"
+
+	// The forecast endpoint only serves roughly the last 92 days; older ranges
+	// must go to the historical archive, which lags ~5 days behind today.
+	archiveLagDays  = 5
+	forecastPastMax = 90
+	forecastAhead   = 15
+	maxRangeDays    = 31
 )
 
 // OpenMeteoResponse maps the Open-Meteo hourly forecast response.
@@ -53,6 +66,14 @@ type HoraDataCell struct {
 	EvapMmHora      float64 `json:"evap_mm_hora"`
 }
 
+// weatherEndpoint picks the archive API for ranges the forecast API rejects.
+func weatherEndpoint(endDate time.Time, now time.Time) string {
+	if endDate.Before(now.AddDate(0, 0, -archiveLagDays)) {
+		return archiveAPI
+	}
+	return forecastAPI
+}
+
 // WeatherForecastFetcher is injected so tests can stub the provider call.
 var WeatherForecastFetcher = func(ctx context.Context, lat, lon float64, startDate, endDate string) (OpenMeteoResponse, error) {
 	params := url.Values{}
@@ -63,7 +84,12 @@ var WeatherForecastFetcher = func(ctx context.Context, lat, lon float64, startDa
 	params.Set("end_date", endDate)
 	params.Set("timezone", "auto")
 
-	apiURL := "https://api.open-meteo.com/v1/forecast?" + params.Encode()
+	end, err := time.Parse(dateLayout, endDate)
+	if err != nil {
+		return OpenMeteoResponse{}, fmt.Errorf("fecha fin inválida: %w", err)
+	}
+
+	apiURL := weatherEndpoint(end, time.Now().UTC()) + "?" + params.Encode()
 	client := &http.Client{Timeout: 10 * time.Second}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiURL, nil)
 	if err != nil {
@@ -77,7 +103,7 @@ var WeatherForecastFetcher = func(ctx context.Context, lat, lon float64, startDa
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
-		return OpenMeteoResponse{}, fmt.Errorf("meteorological provider returned %d", resp.StatusCode)
+		return OpenMeteoResponse{}, fmt.Errorf("meteorological provider returned %d: %s", resp.StatusCode, providerReason(resp.Body))
 	}
 
 	var data OpenMeteoResponse
@@ -85,6 +111,21 @@ var WeatherForecastFetcher = func(ctx context.Context, lat, lon float64, startDa
 		return OpenMeteoResponse{}, err
 	}
 	return data, nil
+}
+
+// providerReason extracts Open-Meteo's `reason` field from an error response.
+func providerReason(body io.Reader) string {
+	raw, err := io.ReadAll(io.LimitReader(body, 4096))
+	if err != nil {
+		return "respuesta ilegible del proveedor"
+	}
+	var payload struct {
+		Reason string `json:"reason"`
+	}
+	if json.Unmarshal(raw, &payload) == nil && payload.Reason != "" {
+		return payload.Reason
+	}
+	return string(raw)
 }
 
 // Simulate runs the thermal evaporation model for an authenticated session.
@@ -104,18 +145,16 @@ func Simulate(w http.ResponseWriter, r *http.Request) {
 	profundidad := parseFloatOrDefault(q.Get("profundidad"), 1.2)
 	lat := parseFloatOrDefault(q.Get("lat"), 40.4167)
 	lon := parseFloatOrDefault(q.Get("lon"), -3.7037)
-	fechaInicio := q.Get("fecha_inicio")
-	if fechaInicio == "" {
-		fechaInicio = "2025-07-15"
-	}
-	fechaFin := q.Get("fecha_fin")
-	if fechaFin == "" {
-		fechaFin = "2025-07-17"
+	today := time.Now().UTC().Truncate(24 * time.Hour)
+	fechaInicio, fechaFin, err := resolveDateRange(q.Get("fecha_inicio"), q.Get("fecha_fin"), today)
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		return
 	}
 
 	climaData, err := WeatherForecastFetcher(r.Context(), lat, lon, fechaInicio, fechaFin)
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "Fallo al conectar con el proveedor meteorológico: " + err.Error()})
+		writeJSON(w, http.StatusBadGateway, map[string]string{"error": "Fallo al conectar con el proveedor meteorológico: " + err.Error()})
 		return
 	}
 
@@ -188,6 +227,38 @@ func Simulate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, resultado)
+}
+
+// resolveDateRange validates the requested window and falls back to a range the
+// provider can actually serve (today .. today+2).
+func resolveDateRange(rawStart, rawEnd string, today time.Time) (string, string, error) {
+	if rawStart == "" && rawEnd == "" {
+		return today.Format(dateLayout), today.AddDate(0, 0, 2).Format(dateLayout), nil
+	}
+
+	start, err := time.Parse(dateLayout, rawStart)
+	if err != nil {
+		return "", "", fmt.Errorf("Fecha de inicio inválida, se espera AAAA-MM-DD.")
+	}
+	end, err := time.Parse(dateLayout, rawEnd)
+	if err != nil {
+		return "", "", fmt.Errorf("Fecha de fin inválida, se espera AAAA-MM-DD.")
+	}
+	if end.Before(start) {
+		return "", "", fmt.Errorf("La fecha de fin debe ser posterior a la de inicio.")
+	}
+	if end.Sub(start) > maxRangeDays*24*time.Hour {
+		return "", "", fmt.Errorf("El rango de fechas no puede superar %d días.", maxRangeDays)
+	}
+	if end.After(today.AddDate(0, 0, forecastAhead)) {
+		return "", "", fmt.Errorf("No hay predicción disponible más allá de %d días desde hoy.", forecastAhead)
+	}
+	// A range served by the forecast endpoint cannot reach further back than its
+	// own history window; older starts must end inside the archive window too.
+	if weatherEndpoint(end, today) == forecastAPI && start.Before(today.AddDate(0, 0, -forecastPastMax)) {
+		return "", "", fmt.Errorf("El rango es demasiado amplio: separa las fechas históricas (más de %d días) de las recientes.", forecastPastMax)
+	}
+	return start.Format(dateLayout), end.Format(dateLayout), nil
 }
 
 func parseFloatOrDefault(val string, def float64) float64 {

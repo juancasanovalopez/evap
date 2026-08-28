@@ -126,3 +126,18 @@ func (h *AuthHandler) Callback(w http.ResponseWriter, r *http.Request) {
 
 	http.Redirect(w, r, "/", http.StatusFound)
 }
+
+// Logout clears the session cookie. It is POST-only to avoid CSRF-triggered
+// sign-outs from cross-site GET requests.
+func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session",
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   h.SecureCookies,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   -1,
+	})
+	w.WriteHeader(http.StatusNoContent)
+}

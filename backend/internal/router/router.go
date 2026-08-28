@@ -60,6 +60,7 @@ func New(deps Deps) *chi.Mux {
 		r.Get("/", handlers.Index)
 	})
 	r.Get("/login", handlers.Login)
+	r.Post("/auth/logout", authHandler.Logout)
 
 	r.Route("/auth/{provider}", func(r chi.Router) {
 		r.Get("/login", authHandler.Login)

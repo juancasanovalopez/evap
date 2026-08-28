@@ -11,6 +11,33 @@
   const locationStatus = document.getElementById('location-status');
   const simulationStatus = document.getElementById('simulation-status');
   const form = document.getElementById('simulation-form');
+  const fechaInicioInput = document.getElementById('fecha_inicio');
+  const fechaFinInput = document.getElementById('fecha_fin');
+  const logoutBtn = document.getElementById('logout-btn');
+
+  function toISODate(date) {
+    return date.toISOString().slice(0, 10);
+  }
+
+  // El proveedor meteorológico sólo sirve un rango limitado alrededor de hoy.
+  (function initDates() {
+    const today = new Date();
+    const end = new Date(today);
+    end.setDate(end.getDate() + 2);
+    if (!fechaInicioInput.value) fechaInicioInput.value = toISODate(today);
+    if (!fechaFinInput.value) fechaFinInput.value = toISODate(end);
+  })();
+
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async () => {
+      logoutBtn.disabled = true;
+      try {
+        await fetch('/auth/logout', { method: 'POST', credentials: 'include' });
+      } finally {
+        window.location.href = '/login';
+      }
+    });
+  }
 
   let reverseGeocodeTimer = null;
 
@@ -89,8 +116,9 @@
     evaporation: '#0e7c61',
   };
 
-  function makeLineChart(canvasId, datasets, labels) {
+  function makeLineChart(canvasId, datasets, labels, extraScales) {
     const ctx = document.getElementById(canvasId);
+    if (!ctx) return null;
     return new Chart(ctx, {
       type: 'line',
       data: { labels, datasets },
@@ -98,7 +126,7 @@
         responsive: true,
         maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
-        scales: { x: { ticks: { maxTicksLimit: 8 } } },
+        scales: Object.assign({ x: { ticks: { maxTicksLimit: 8 } } }, extraScales || {}),
       },
     });
   }
@@ -106,12 +134,13 @@
   let charts = {};
 
   function destroyCharts() {
-    Object.values(charts).forEach((c) => c.destroy());
+    Object.values(charts).forEach((c) => c && c.destroy());
     charts = {};
   }
 
   function renderCharts(reporte) {
     destroyCharts();
+    if (!Array.isArray(reporte) || reporte.length === 0) return;
     const labels = reporte.map((h) => h.timestamp);
 
     charts.temperature = makeLineChart(
@@ -142,6 +171,10 @@
         { label: 'Evaporación (L/h)', data: reporte.map((h) => h.evap_litros_hora), borderColor: chartColors.evaporation, tension: 0.3, yAxisID: 'y1' },
       ],
       labels,
+      {
+        y: { type: 'linear', position: 'left' },
+        y1: { type: 'linear', position: 'right', grid: { drawOnChartArea: false } },
+      },
     );
   }
 
@@ -154,8 +187,8 @@
     const profundidad = document.getElementById('profundidad').value;
     const lat = latInput.value;
     const lon = lonInput.value;
-    const fechaInicio = document.getElementById('fecha_inicio').value;
-    const fechaFin = document.getElementById('fecha_fin').value;
+    const fechaInicio = fechaInicioInput.value;
+    const fechaFin = fechaFinInput.value;
 
     const params = new URLSearchParams({
       area, profundidad, lat, lon, fecha_inicio: fechaInicio, fecha_fin: fechaFin,
@@ -170,6 +203,7 @@
       }
       const data = await res.json();
       if (!res.ok) {
+        destroyCharts();
         simulationStatus.textContent = data.error || 'No se pudo ejecutar la simulación.';
         return;
       }

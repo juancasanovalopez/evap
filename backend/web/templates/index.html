@@ -21,6 +21,7 @@
       <nav class="header-actions">
         <span class="user-pill">Hola, {{.Name}}</span>
         <a class="button ghost" href="/api/v1/private">Mi perfil</a>
+        <button type="button" id="logout-btn" class="button ghost">Cerrar sesión</button>
       </nav>
     </header>
 
@@ -97,11 +98,11 @@
           <div class="field-row two-col">
             <div class="field-group">
               <label for="fecha_inicio">Fecha inicio</label>
-              <input id="fecha_inicio" name="fecha_inicio" type="date" value="2025-07-15" />
+              <input id="fecha_inicio" name="fecha_inicio" type="date" />
             </div>
             <div class="field-group">
               <label for="fecha_fin">Fecha fin</label>
-              <input id="fecha_fin" name="fecha_fin" type="date" value="2025-07-17" />
+              <input id="fecha_fin" name="fecha_fin" type="date" />
             </div>
           </div>
 
@@ -160,6 +161,6 @@
 
   <script src="/static/vendor/leaflet/leaflet.js"></script>
   <script src="/static/vendor/chartjs/chart.umd.min.js"></script>
-  <script src="/static/js/dashboard.js" defer></script>
+  <script src="/static/js/dashboard.js"></script>
 </body>
 </html>

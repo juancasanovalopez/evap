@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -22,6 +23,24 @@ func TestJWTAuth_RejectsMissingToken(t *testing.T) {
 	handler.ServeHTTP(rec, req)
 
 	require.Equal(t, http.StatusUnauthorized, rec.Code)
+}
+
+func TestJWTAuth_LocalizesMissingTokenError(t *testing.T) {
+	issuer := auth.NewTokenIssuer("key", time.Hour)
+	handler := DetectLanguage(JWTAuth(issuer)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatal("handler should not be called")
+	})))
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/private", nil)
+	req.Header.Set("Accept-Language", "fr-CA")
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	var response map[string]string
+	require.Equal(t, http.StatusUnauthorized, rec.Code)
+	require.Equal(t, "application/json", rec.Header().Get("Content-Type"))
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &response))
+	require.Equal(t, "autorisation manquante ou incorrecte", response["error"])
 }
 
 func TestJWTAuth_AcceptsValidBearerToken(t *testing.T) {

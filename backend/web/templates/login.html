@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="{{.Language}}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Iniciar sesión - evap</title>
+  <title>{{msg "login.title"}}</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
@@ -11,11 +11,11 @@
     <section class="panel auth-panel">
       <p class="eyebrow">login</p>
       <h1>EVAP</h1>
-      <p class="auth-copy">Calcula la evaporación de una lámina de agua en función de la climatología</p>
+      <p class="auth-copy">{{msg "login.description"}}</p>
 
       <div class="auth-actions">
-        <a class="button primary large" href="/auth/google/login"> Login con Google</a>
-        <a class="button ghost large" href="/auth/github/login">Login con GitHub</a>
+        <a class="button primary large" href="/auth/google/login">{{msg "login.with_google"}}</a>
+        <a class="button ghost large" href="/auth/github/login">{{msg "login.with_github"}}</a>
       </div>
     </section>
   </div>

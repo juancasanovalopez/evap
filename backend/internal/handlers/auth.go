@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"evap-backend/internal/auth"
+	"evap-backend/internal/i18n"
 	"evap-backend/internal/store"
 )
 
@@ -26,13 +27,13 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	provider := auth.Provider(chi.URLParam(r, "provider"))
 	cfg, ok := h.Providers[provider]
 	if !ok {
-		http.Error(w, "unknown provider", http.StatusNotFound)
+		writeLocalizedError(w, r, http.StatusNotFound, i18n.AuthUnknownProvider)
 		return
 	}
 
 	state, err := auth.NewState()
 	if err != nil {
-		http.Error(w, "failed to start login", http.StatusInternalServerError)
+		writeLocalizedError(w, r, http.StatusInternalServerError, i18n.AuthStartLoginFailed)
 		return
 	}
 
@@ -55,33 +56,33 @@ func (h *AuthHandler) Callback(w http.ResponseWriter, r *http.Request) {
 	provider := auth.Provider(chi.URLParam(r, "provider"))
 	cfg, ok := h.Providers[provider]
 	if !ok {
-		http.Error(w, "unknown provider", http.StatusNotFound)
+		writeLocalizedError(w, r, http.StatusNotFound, i18n.AuthUnknownProvider)
 		return
 	}
 
 	stateCookie, err := r.Cookie(oauthStateCookie)
 	if err != nil || r.URL.Query().Get("state") != stateCookie.Value {
-		http.Error(w, "invalid oauth state", http.StatusBadRequest)
+		writeLocalizedError(w, r, http.StatusBadRequest, i18n.AuthInvalidOAuthState)
 		return
 	}
 
 	code := r.URL.Query().Get("code")
 	if code == "" {
-		http.Error(w, "missing authorization code", http.StatusBadRequest)
+		writeLocalizedError(w, r, http.StatusBadRequest, i18n.AuthMissingCode)
 		return
 	}
 
 	ctx := r.Context()
 	token, err := cfg.OAuth2.Exchange(ctx, code)
 	if err != nil {
-		http.Error(w, "failed to exchange authorization code", http.StatusBadGateway)
+		writeLocalizedError(w, r, http.StatusBadGateway, i18n.AuthCodeExchangeFailed)
 		return
 	}
 
 	client := cfg.OAuth2.Client(ctx, token)
 	profile, err := cfg.FetchProfile(ctx, client)
 	if err != nil {
-		http.Error(w, "failed to fetch user profile", http.StatusBadGateway)
+		writeLocalizedError(w, r, http.StatusBadGateway, i18n.AuthProfileFetchFailed)
 		return
 	}
 
@@ -93,7 +94,7 @@ func (h *AuthHandler) Callback(w http.ResponseWriter, r *http.Request) {
 		AvatarURL:  profile.AvatarURL,
 	})
 	if err != nil {
-		http.Error(w, "failed to persist user profile", http.StatusInternalServerError)
+		writeLocalizedError(w, r, http.StatusInternalServerError, i18n.AuthProfilePersistFailed)
 		return
 	}
 
@@ -104,7 +105,7 @@ func (h *AuthHandler) Callback(w http.ResponseWriter, r *http.Request) {
 		AvatarURL: user.AvatarURL,
 	})
 	if err != nil {
-		http.Error(w, "failed to issue session token", http.StatusInternalServerError)
+		writeLocalizedError(w, r, http.StatusInternalServerError, i18n.AuthSessionIssueFailed)
 		return
 	}
 

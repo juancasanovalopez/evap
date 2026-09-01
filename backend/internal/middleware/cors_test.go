@@ -33,3 +33,18 @@ func TestCORS_RejectsNonWhitelistedOrigin(t *testing.T) {
 
 	require.Empty(t, rec.Header().Get("Access-Control-Allow-Origin"))
 }
+
+func TestCORS_AllowsAcceptLanguageHeader(t *testing.T) {
+	handler := CORS([]string{"https://evap.example.com"})(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+
+	req := httptest.NewRequest(http.MethodOptions, "/api/v1/simulate", nil)
+	req.Header.Set("Origin", "https://evap.example.com")
+	req.Header.Set("Access-Control-Request-Method", http.MethodGet)
+	req.Header.Set("Access-Control-Request-Headers", "Accept-Language")
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	require.Contains(t, rec.Header().Get("Access-Control-Allow-Headers"), "Accept-Language")
+}

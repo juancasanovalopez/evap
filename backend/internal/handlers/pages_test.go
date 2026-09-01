@@ -51,3 +51,16 @@ func TestLogin_RendersProviderLinks(t *testing.T) {
 	require.True(t, strings.Contains(body, "/auth/google/login"))
 	require.True(t, strings.Contains(body, "/auth/github/login"))
 }
+
+func TestLogin_RendersNegotiatedFrench(t *testing.T) {
+	handler := appmw.DetectLanguage(http.HandlerFunc(Login))
+	req := httptest.NewRequest(http.MethodGet, "/login", nil)
+	req.Header.Set("Accept-Language", "fr-CA")
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+	require.Contains(t, rec.Body.String(), `<html lang="fr-u-rg-cazzzz">`)
+	require.Contains(t, rec.Body.String(), "Se connecter avec Google")
+}

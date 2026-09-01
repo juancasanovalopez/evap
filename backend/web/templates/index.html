@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="{{.Language}}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>evap | Dashboard</title>
+  <title>evap | {{msg "dashboard.title"}}</title>
   <link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css">
   <link rel="stylesheet" href="/static/style.css">
 </head>
@@ -14,34 +14,34 @@
         <span class="brand-mark">E</span>
         <div>
           <div class="brand-kicker">evap</div>
-          <h1>Cálculo de la evaporación</h1>
+          <h1>{{msg "dashboard.title"}}</h1>
         </div>
       </div>
 
       <nav class="header-actions">
-        <span class="user-pill">Hola, {{.Name}}</span>
-        <a class="button ghost" href="/api/v1/private">perfil</a>
-        <button type="button" id="logout-btn" class="button ghost">Cerrar sesión</button>
+        <span class="user-pill">{{msg "dashboard.greeting" .Name}}</span>
+        <a class="button ghost" href="/api/v1/private">{{msg "dashboard.profile"}}</a>
+        <button type="button" id="logout-btn" class="button ghost">{{msg "dashboard.logout"}}</button>
       </nav>
     </header>
 
     <main class="dashboard">
       <section class="panel hero-panel">
         <div>
-          <p class="eyebrow">Estado del sistema</p>
-          <h2>Simulación</h2>
+          <p class="eyebrow">{{msg "dashboard.system_status"}}</p>
+          <h2>{{msg "dashboard.simulation"}}</h2>
         </div>
         <div class="hero-stats">
           <div class="stat-card">
-            <span>Pérdida total</span>
+            <span>{{msg "dashboard.total_loss"}}</span>
             <strong id="hero-daily-mm">– mm</strong>
           </div>
           <div class="stat-card">
-            <span>Volumen</span>
+            <span>{{msg "dashboard.volume"}}</span>
             <strong id="hero-liters">– L</strong>
           </div>
           <div class="stat-card">
-            <span>Metros bajados</span>
+            <span>{{msg "dashboard.lowered_meters"}}</span>
             <strong id="hero-area">– m</strong>
           </div>
         </div>
@@ -49,26 +49,26 @@
 
       <section class="panel">
         <div class="panel-header">
-          <h3>Ubicación</h3>
-          <p class="panel-subtitle">Haz clic en el mapa, arrastrando el marcador o utiliza tu ubicación actual.</p>
+          <h3>{{msg "dashboard.location"}}</h3>
+          <p class="panel-subtitle">{{msg "dashboard.location_help"}}</p>
         </div>
 
         <div class="location-layout">
-          <div id="map" class="map-container" aria-label="Mapa para seleccionar la ubicación"></div>
+          <div id="map" class="map-container" aria-label="{{msg "dashboard.map_label"}}"></div>
 
           <div class="location-side">
-            <button type="button" id="geolocate-btn" class="button ghost">Usar mi ubicación</button>
+            <button type="button" id="geolocate-btn" class="button ghost">{{msg "dashboard.use_my_location"}}</button>
             <div class="field-group">
-              <label for="place-name">Lugar</label>
+              <label for="place-name">{{msg "dashboard.place"}}</label>
               <input id="place-name" type="text" readonly value="Madrid, España" />
             </div>
             <div class="field-row two-col">
               <div class="field-group">
-                <label for="lat">Latitud</label>
+                <label for="lat">{{msg "dashboard.latitude"}}</label>
                 <input id="lat" type="number" step="0.0001" readonly value="40.4167" />
               </div>
               <div class="field-group">
-                <label for="lon">Longitud</label>
+                <label for="lon">{{msg "dashboard.longitude"}}</label>
                 <input id="lon" type="number" step="0.0001" readonly value="-3.7037" />
               </div>
             </div>
@@ -79,57 +79,57 @@
 
       <section class="panel">
         <div class="panel-header">
-          <h3>Características de la masa de agua</h3>
+          <h3>{{msg "dashboard.water_characteristics"}}</h3>
         </div>
 
         <form id="simulation-form" class="simulation-form">
           <div class="field-row two-col">
             <div class="field-group">
-              <label for="area">Superficie (m²)</label>
+              <label for="area">{{msg "dashboard.surface"}}</label>
               <input id="area" name="area" type="number" min="10" step="0.1" value="32" />
             </div>
             <div class="field-group">
-              <label for="profundidad">Profundidad (m)</label>
+              <label for="profundidad">{{msg "dashboard.depth"}}</label>
               <input id="profundidad" name="profundidad" type="number" min="0.5" step="0.1" value="1.2" />
             </div>
           </div>
 
           <div class="field-row two-col">
             <div class="field-group">
-              <label for="fecha_inicio">Fecha inicio</label>
+              <label for="fecha_inicio">{{msg "dashboard.start_date"}}</label>
               <input id="fecha_inicio" name="fecha_inicio" type="date" />
             </div>
             <div class="field-group">
-              <label for="fecha_fin">Fecha fin</label>
+              <label for="fecha_fin">{{msg "dashboard.end_date"}}</label>
               <input id="fecha_fin" name="fecha_fin" type="date" />
             </div>
           </div>
 
-          <button type="submit" class="button primary large">Ejecutar simulación</button>
+          <button type="submit" class="button primary large">{{msg "dashboard.run_simulation"}}</button>
         </form>
         <p id="simulation-status" class="hint-text" role="status"></p>
       </section>
 
             <section class="panel">
         <div class="panel-header">
-          <h3>Datos meteorológicos</h3>
+          <h3>{{msg "dashboard.weather_data"}}</h3>
         </div>
 
         <div class="charts-grid">
           <div class="chart-card">
-            <h4>Temperatura (°C)</h4>
+            <h4>{{msg "dashboard.temperature"}}</h4>
             <canvas id="chart-temperature"></canvas>
           </div>
           <div class="chart-card">
-            <h4>Humedad relativa (%)</h4>
+            <h4>{{msg "dashboard.relative_humidity"}}</h4>
             <canvas id="chart-humidity"></canvas>
           </div>
           <div class="chart-card">
-            <h4>Viento (km/h)</h4>
+            <h4>{{msg "dashboard.wind"}}</h4>
             <canvas id="chart-wind"></canvas>
           </div>
           <div class="chart-card">
-            <h4>Radiación solar y evaporación</h4>
+            <h4>{{msg "dashboard.radiation_evaporation"}}</h4>
             <canvas id="chart-radiation"></canvas>
           </div>
         </div>
@@ -137,20 +137,20 @@
 
       <section class="panel">
         <div class="panel-header">
-          <h3>Resultado</h3>
+          <h3>{{msg "dashboard.result"}}</h3>
         </div>
 
         <div class="result-stack">
           <div class="result-line">
-            <span>Evaporación total</span>
+            <span>{{msg "dashboard.total_evaporation"}}</span>
             <strong id="total-mm">– mm</strong>
           </div>
           <div class="result-line">
-            <span>Volumen evaporado</span>
+            <span>{{msg "dashboard.evaporated_volume"}}</span>
             <strong id="total-liters">– L</strong>
           </div>
           <div class="result-line">
-            <span>Metros lineales bajados</span>
+            <span>{{msg "dashboard.linear_meters_lowered"}}</span>
             <strong id="total-meters">– m</strong>
           </div>
         </div>

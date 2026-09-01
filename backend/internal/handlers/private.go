@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 
+	"evap-backend/internal/i18n"
 	"evap-backend/internal/middleware"
 )
 
@@ -19,7 +20,7 @@ type PrivateUserResponse struct {
 func Private(w http.ResponseWriter, r *http.Request) {
 	claims, ok := middleware.ClaimsFromContext(r.Context())
 	if !ok {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		writeLocalizedError(w, r, http.StatusUnauthorized, i18n.AuthUnauthorized)
 		return
 	}
 	writeJSON(w, http.StatusOK, PrivateUserResponse{

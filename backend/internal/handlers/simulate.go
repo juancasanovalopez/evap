@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -12,6 +11,7 @@ import (
 	"strconv"
 	"time"
 
+	"evap-backend/internal/i18n"
 	"evap-backend/internal/middleware"
 )
 
@@ -65,6 +65,15 @@ type HoraDataCell struct {
 	RadiacionSolar  float64 `json:"radiacion_solar"`
 	EvapLitrosHora  float64 `json:"evap_litros_hora"`
 	EvapMmHora      float64 `json:"evap_mm_hora"`
+}
+
+type localizedError struct {
+	key  string
+	args []any
+}
+
+func (err *localizedError) Error() string {
+	return err.key
 }
 
 // weatherEndpoint picks the archive API for ranges the forecast API rejects.
@@ -132,12 +141,12 @@ func providerReason(body io.Reader) string {
 // Simulate runs the thermal evaporation model for an authenticated session.
 func Simulate(w http.ResponseWriter, r *http.Request) {
 	if _, ok := middleware.ClaimsFromContext(r.Context()); !ok {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		writeLocalizedError(w, r, http.StatusUnauthorized, i18n.AuthUnauthorized)
 		return
 	}
 
 	if r.Method != http.MethodGet {
-		http.Error(w, `{"error": "Método no permitido. Utilizar GET"}`, http.StatusMethodNotAllowed)
+		writeLocalizedError(w, r, http.StatusMethodNotAllowed, i18n.SimulationMethodNotAllowed)
 		return
 	}
 
@@ -149,19 +158,20 @@ func Simulate(w http.ResponseWriter, r *http.Request) {
 	today := time.Now().UTC().Truncate(24 * time.Hour)
 	fechaInicio, fechaFin, err := resolveDateRange(q.Get("fecha_inicio"), q.Get("fecha_fin"), today)
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		localized := err.(*localizedError)
+		writeLocalizedError(w, r, http.StatusBadRequest, localized.key, localized.args...)
 		return
 	}
 
 	climaData, err := WeatherForecastFetcher(r.Context(), lat, lon, fechaInicio, fechaFin)
 	if err != nil {
-		writeJSON(w, http.StatusBadGateway, map[string]string{"error": "Fallo al conectar con el proveedor meteorológico: " + err.Error()})
+		writeLocalizedError(w, r, http.StatusBadGateway, i18n.SimulationWeatherProvider)
 		return
 	}
 
 	pasos := len(climaData.Hourly.Temperature2m)
 	if pasos == 0 {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "No se encontraron datos climáticos para el rango de fechas proporcionado."})
+		writeLocalizedError(w, r, http.StatusBadRequest, i18n.SimulationNoWeatherData)
 		return
 	}
 
@@ -239,25 +249,25 @@ func resolveDateRange(rawStart, rawEnd string, today time.Time) (string, string,
 
 	start, err := time.Parse(dateLayout, rawStart)
 	if err != nil {
-		return "", "", errors.New("fecha de inicio inválida, se espera AAAA-MM-DD")
+		return "", "", &localizedError{key: i18n.SimulationInvalidStartDate}
 	}
 	end, err := time.Parse(dateLayout, rawEnd)
 	if err != nil {
-		return "", "", errors.New("fecha de fin inválida, se espera AAAA-MM-DD")
+		return "", "", &localizedError{key: i18n.SimulationInvalidEndDate}
 	}
 	if end.Before(start) {
-		return "", "", errors.New("la fecha de fin debe ser posterior a la de inicio")
+		return "", "", &localizedError{key: i18n.SimulationEndBeforeStart}
 	}
 	if end.Sub(start) > maxRangeDays*24*time.Hour {
-		return "", "", fmt.Errorf("el rango de fechas no puede superar %d días", maxRangeDays)
+		return "", "", &localizedError{key: i18n.SimulationRangeTooLarge, args: []any{maxRangeDays}}
 	}
 	if end.After(today.AddDate(0, 0, forecastAhead)) {
-		return "", "", fmt.Errorf("no hay predicción disponible más allá de %d días desde hoy", forecastAhead)
+		return "", "", &localizedError{key: i18n.SimulationForecastTooFar, args: []any{forecastAhead}}
 	}
 	// A range served by the forecast endpoint cannot reach further back than its
 	// own history window; older starts must end inside the archive window too.
 	if weatherEndpoint(end, today) == forecastAPI && start.Before(today.AddDate(0, 0, -forecastPastMax)) {
-		return "", "", fmt.Errorf("el rango es demasiado amplio: separa las fechas históricas (más de %d días) de las recientes", forecastPastMax)
+		return "", "", &localizedError{key: i18n.SimulationRangeSplitRequired, args: []any{forecastPastMax}}
 	}
 	return start.Format(dateLayout), end.Format(dateLayout), nil
 }

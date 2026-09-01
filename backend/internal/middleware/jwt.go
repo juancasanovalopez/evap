@@ -2,10 +2,12 @@ package middleware
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"strings"
 
 	"evap-backend/internal/auth"
+	"evap-backend/internal/i18n"
 )
 
 type contextKey string
@@ -20,18 +22,26 @@ func JWTAuth(issuer *auth.TokenIssuer) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			token := bearerToken(r)
 			if token == "" {
-				http.Error(w, "missing or malformed authorization", http.StatusUnauthorized)
+				writeLocalizedUnauthorized(w, r, i18n.AuthMissingCredentials)
 				return
 			}
 			claims, err := issuer.Verify(token)
 			if err != nil {
-				http.Error(w, "invalid or expired token", http.StatusUnauthorized)
+				writeLocalizedUnauthorized(w, r, i18n.AuthInvalidToken)
 				return
 			}
 			ctx := context.WithValue(r.Context(), claimsContextKey, claims)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
+}
+
+func writeLocalizedUnauthorized(w http.ResponseWriter, r *http.Request, key string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusUnauthorized)
+	_ = json.NewEncoder(w).Encode(map[string]string{
+		"error": i18n.Text(LanguageFromContext(r.Context()), key),
+	})
 }
 
 // ClaimsFromContext retrieves the authenticated user's claims, if present.

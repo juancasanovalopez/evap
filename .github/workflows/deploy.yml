@@ -150,6 +150,12 @@ jobs:
           terraform import 'aws_ssm_parameter.oauth_secrets["github_client_secret"]' /evap/prod/github_client_secret || true
           terraform import aws_lambda_function.api evap-api || true
           terraform import aws_lambda_permission.apigw_invoke evap-api/AllowAPIGatewayInvoke || true
+          terraform import aws_cloudwatch_log_group.iot_rule_errors /aws/iot/evap-sensor-ingest-errors || true
+          terraform import aws_dynamodb_table.sensor_readings evap_sensor_readings || true
+          terraform import aws_iam_role.iot_rule evap-iot-rule-role || true
+          terraform import aws_iam_role_policy.iot_rule_permissions evap-iot-rule-role:evap-iot-rule-permissions || true
+          terraform import aws_iot_policy.device evap-iot-device-policy || true
+          terraform import aws_iot_topic_rule.sensor_ingest evap_sensor_ingest || true
 
           # API Gateway resources use random IDs — look them up dynamically.
           API_ID=$(aws apigatewayv2 get-apis \

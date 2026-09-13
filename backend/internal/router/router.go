@@ -60,6 +60,7 @@ func New(deps Deps) *chi.Mux {
 		r.Use(appmw.OptionalJWTAuth(deps.Issuer))
 		r.Get("/", handlers.Index)
 	})
+	r.With(appmw.JWTAuth(deps.Issuer)).Get("/sensor-guide", handlers.SensorGuide)
 	r.Get("/login", handlers.Login)
 	r.Post("/auth/logout", authHandler.Logout)
 

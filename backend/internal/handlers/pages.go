@@ -42,6 +42,20 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// SensorGuide renders the authenticated MQTT sensor setup guide.
+func SensorGuide(w http.ResponseWriter, r *http.Request) {
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+	data := indexPageData{Name: claims.Name, Language: middleware.LanguageFromContext(r.Context()).String()}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if err := pageTemplateFor(r).ExecuteTemplate(w, "sensor-guide.html", data); err != nil {
+		writeLocalizedError(w, r, http.StatusInternalServerError, i18n.PageRenderFailed)
+	}
+}
+
 // Login renders the SSR login page with buttons for each OAuth2 provider.
 func Login(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")

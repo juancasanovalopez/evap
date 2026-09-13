@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="{{.Language}}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>evap | {{msg "sensor_guide.title"}}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">E</span>
+        <div>
+          <div class="brand-kicker">evap</div>
+          <h1>{{msg "sensor_guide.title"}}</h1>
+        </div>
+      </div>
+      <a class="button ghost" href="/">{{msg "sensor_guide.back"}}</a>
+    </header>
+
+    <main class="guide-layout">
+      <section class="panel guide-intro">
+        <p class="eyebrow">MQTT / AWS IoT Core</p>
+        <h2>{{msg "sensor_guide.title"}}</h2>
+        <p class="panel-subtitle">{{msg "sensor_guide.intro"}}</p>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h3>{{msg "sensor_guide.connection"}}</h3>
+        </div>
+        <div class="guide-data-grid">
+          <div class="guide-data-item">
+            <span>{{msg "sensor_guide.endpoint"}}</span>
+            <code>ahcs6sx972h5m-ats.iot.eu-south-2.amazonaws.com</code>
+          </div>
+          <div class="guide-data-item">
+            <span>{{msg "sensor_guide.port"}}</span>
+            <code>8883</code>
+          </div>
+          <div class="guide-data-item">
+            <span>{{msg "sensor_guide.protocol"}}</span>
+            <code>MQTT over TLS (mTLS)</code>
+          </div>
+          <div class="guide-data-item">
+            <span>{{msg "sensor_guide.username"}}</span>
+            <code>{{msg "sensor_guide.auth"}}</code>
+          </div>
+          <div class="guide-data-item">
+            <span>{{msg "sensor_guide.password"}}</span>
+            <code>{{msg "sensor_guide.auth"}}</code>
+          </div>
+          <div class="guide-data-item">
+            <span>{{msg "sensor_guide.topic"}}</span>
+            <code>evap/{owner_user_id}/{device_id}/readings</code>
+          </div>
+          <div class="guide-data-item guide-data-wide">
+            <span>{{msg "sensor_guide.auth"}}</span>
+            <code>Certificado X.509 + clave privada + CA raíz de Amazon</code>
+          </div>
+          <div class="guide-data-item guide-data-wide">
+            <span>{{msg "sensor_guide.interval"}}</span>
+            <code>60 segundos (recomendado)</code>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h3>{{msg "sensor_guide.payload"}}</h3>
+          <p class="panel-subtitle">{{msg "sensor_guide.payload_text"}}</p>
+        </div>
+        <pre class="code-block"><code>{
+  "temperature": 24.6,
+  "timestamp": "2026-09-13T12:00:00Z"
+}</code></pre>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h3>{{msg "sensor_guide.steps"}}</h3>
+        </div>
+        <ol class="guide-steps">
+          <li>{{msg "sensor_guide.step_one"}}</li>
+          <li>{{msg "sensor_guide.step_two"}}</li>
+          <li>{{msg "sensor_guide.step_three"}}</li>
+        </ol>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

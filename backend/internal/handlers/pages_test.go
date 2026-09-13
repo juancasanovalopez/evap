@@ -40,6 +40,33 @@ func TestIndex_AuthenticatedRendersDashboard(t *testing.T) {
 	require.Contains(t, rec.Body.String(), "Ada")
 }
 
+func TestSensorGuide_AnonymousRedirectsToLogin(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/sensor-guide", nil)
+	rec := httptest.NewRecorder()
+
+	SensorGuide(rec, req)
+
+	require.Equal(t, http.StatusFound, rec.Code)
+	require.Equal(t, "/login", rec.Header().Get("Location"))
+}
+
+func TestSensorGuide_AuthenticatedRendersConnectionData(t *testing.T) {
+	issuer := auth.NewTokenIssuer("key", time.Hour)
+	token, err := issuer.Issue("google#1", auth.Claims{Provider: "google", Name: "Ada"})
+	require.NoError(t, err)
+
+	handler := appmw.JWTAuth(issuer)(http.HandlerFunc(SensorGuide))
+	req := httptest.NewRequest(http.MethodGet, "/sensor-guide", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+	require.Contains(t, rec.Body.String(), "ahcs6sx972h5m-ats.iot.eu-south-2.amazonaws.com")
+	require.Contains(t, rec.Body.String(), "evap/{owner_user_id}/{device_id}/readings")
+}
+
 func TestLogin_RendersProviderLinks(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/login", nil)
 	rec := httptest.NewRecorder()

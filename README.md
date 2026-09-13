@@ -1,9 +1,7 @@
 # evap
 
 Aplicación web para estimar la evaporación de una superficie abierta usando
-datos meteorológicos horarios. El backend está implementado en Go y sirve la
-interfaz SSR, los recursos estáticos y la API desde una única función AWS
-Lambda.
+datos meteorológicos horarios. El backend está implementado en Go y sirve la interfaz SSR, los recursos estáticos y la API desde una única función AWS Lambda.
 
 ## Estado del proyecto
 
@@ -13,24 +11,24 @@ mediante Google y GitHub. La rama que dispara el despliegue automático es
 
 ## Arquitectura
 
-```text
-Navegador
-	 |
-	 v
-API Gateway HTTP API
-	 |
-	 v
-AWS Lambda (Go, provided.al2023, arm64)
-	 |             |              |
-	 v             v              v
-DynamoDB       SSM            Open-Meteo
-usuarios       secretos       previsión horaria
+```mermaid
+flowchart LR
+	Browser[Navegador] --> APIGW[API Gateway HTTP API]
+	APIGW --> Lambda["AWS Lambda (Go, provided.al2023, arm64)"]
+	Lambda --> DDBUsers[(DynamoDB<br/>evap_users)]
+	Lambda --> SSM[SSM Parameter Store<br/>secretos]
+	Lambda --> OpenMeteo[Open-Meteo<br/>previsión horaria]
+
+	Device["Dispositivo IoT<br/>cert X.509"] -->|"MQTT publish<br/>evap/{owner_user_id}/{device_id}/readings"| IoTCore[AWS IoT Core]
+	IoTCore -->|Topic Rule| DDBReadings[(DynamoDB<br/>evap_sensor_readings)]
+	IoTCore -->|error_action| CWLogs[CloudWatch Logs]
 ```
 
 - `backend/`: aplicación Go, router chi, handlers, autenticación, persistencia,
 	plantillas y estáticos.
-- `infra/`: Terraform para Lambda, API Gateway, DynamoDB, SSM, CloudWatch y
-	el proveedor OIDC de GitHub Actions.
+- `infra/`: Terraform para Lambda, API Gateway, DynamoDB, SSM, CloudWatch,
+	AWS IoT Core (broker MQTT para ingesta de sensores) y el proveedor OIDC de
+	GitHub Actions.
 - `.github/workflows/deploy.yml`: pruebas, lint, empaquetado y despliegue.
 - DynamoDB usa una tabla on-demand con claves `PK` y `SK` para perfiles OAuth.
 - Los secretos de producción se leen desde SSM Parameter Store como

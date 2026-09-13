@@ -34,6 +34,12 @@ variable "dynamodb_table_name" {
   default     = "evap_users"
 }
 
+variable "sensor_readings_table_name" {
+  description = "Name of the DynamoDB table storing IoT sensor readings."
+  type        = string
+  default     = "evap_sensor_readings"
+}
+
 variable "allowed_cors_origins" {
   description = "Origins allowed to call the API with credentials."
   type        = list(string)

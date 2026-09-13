@@ -13,6 +13,16 @@ output "dynamodb_table_name" {
   value       = aws_dynamodb_table.users.name
 }
 
+output "sensor_readings_table_name" {
+  description = "Name of the DynamoDB table storing IoT sensor readings."
+  value       = aws_dynamodb_table.sensor_readings.name
+}
+
+output "iot_endpoint" {
+  description = "AWS IoT Core data-plane endpoint devices must connect to."
+  value       = data.aws_iot_endpoint.this.endpoint_address
+}
+
 output "lambda_role_arn" {
   description = "ARN of the Lambda execution role."
   value       = aws_iam_role.lambda_exec.arn

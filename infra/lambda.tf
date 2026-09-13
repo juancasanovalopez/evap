@@ -29,6 +29,7 @@ resource "aws_lambda_function" "api" {
   environment {
     variables = {
       DYNAMODB_TABLE_NAME     = aws_dynamodb_table.users.name
+      IOT_ENDPOINT             = data.aws_iot_endpoint.this.endpoint_address
       OAUTH_SSM_PREFIX        = var.oauth_ssm_prefix
       OAUTH_REDIRECT_BASE_URL = var.oauth_redirect_base_url
       ALLOWED_CORS_ORIGINS    = join(",", var.allowed_cors_origins)

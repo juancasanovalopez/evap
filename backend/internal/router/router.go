@@ -20,9 +20,11 @@ import (
 
 // Deps holds the dependencies required to build the router.
 type Deps struct {
-	Config *config.Config
-	Users  store.UserRepository
-	Issuer *auth.TokenIssuer
+	Config        *config.Config
+	Users         store.UserRepository
+	Issuer        *auth.TokenIssuer
+	IoT           handlers.IoTClient
+	IoTPolicyName string
 	// SecureCookies should be true in production (HTTPS); false for local dev over HTTP.
 	SecureCookies bool
 }
@@ -73,6 +75,7 @@ func New(deps Deps) *chi.Mux {
 		r.Use(appmw.JWTAuth(deps.Issuer))
 		r.Get("/private", handlers.Private)
 		r.Get("/simulate", handlers.Simulate)
+		r.Post("/sensors", handlers.CreateSensorHandler(deps.IoT, deps.IoTPolicyName, deps.Config.IoTEndpoint))
 	})
 
 	return r

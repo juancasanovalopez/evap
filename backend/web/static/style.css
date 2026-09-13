@@ -115,6 +115,9 @@ input { font: inherit; }
 .guide-data-item span { display: block; margin-bottom: 7px; color: var(--muted); font-size: 0.78rem; font-weight: 700; }
 .guide-data-item code { overflow-wrap: anywhere; color: var(--accent-dark); font-family: "SFMono-Regular", Consolas, monospace; font-size: 0.84rem; }
 .guide-data-wide { grid-column: 1 / -1; }
+.sensor-form { display: grid; max-width: 620px; gap: 12px; margin-top: 22px; }
+.credentials-panel[hidden] { display: none; }
+.credentials-panel textarea { width: 100%; min-height: 150px; padding: 10px; border: 1px solid var(--line); background: var(--surface-muted); color: var(--ink); font: 0.78rem/1.35 "SFMono-Regular", Consolas, monospace; resize: vertical; }
 .code-block { margin: 0; padding: 18px; overflow-x: auto; background: var(--ink); color: #dce9e4; font-size: 0.88rem; }
 .guide-steps { display: grid; gap: 14px; margin: 0; padding-left: 24px; }
 .guide-steps li { padding-left: 6px; }

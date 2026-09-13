@@ -93,6 +93,34 @@ data "aws_iam_policy_document" "github_actions_permissions" {
   }
 
   statement {
+    sid = "ManageSensorReadingsTable"
+    actions = [
+      "dynamodb:DescribeTable",
+      "dynamodb:CreateTable",
+      "dynamodb:UpdateTable",
+      "dynamodb:DeleteTable",
+      "dynamodb:TagResource",
+    ]
+    resources = ["arn:aws:dynamodb:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:table/${var.sensor_readings_table_name}"]
+  }
+
+  statement {
+    sid = "ManageIoTResources"
+    actions = [
+      "iot:CreatePolicy",
+      "iot:DeletePolicy",
+      "iot:GetPolicy",
+      "iot:CreateTopicRule",
+      "iot:DeleteTopicRule",
+      "iot:GetTopicRule",
+      "iot:ReplaceTopicRule",
+      "iot:ListTopicRules",
+      "iot:TagResource",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
     sid = "ManageSSMParameters"
     actions = [
       "ssm:GetParameter",
@@ -121,6 +149,21 @@ data "aws_iam_policy_document" "github_actions_permissions" {
   }
 
   statement {
+    sid = "ManageIoTRuleRole"
+    actions = [
+      "iam:GetRole",
+      "iam:CreateRole",
+      "iam:DeleteRole",
+      "iam:PassRole",
+      "iam:GetRolePolicy",
+      "iam:PutRolePolicy",
+      "iam:DeleteRolePolicy",
+      "iam:TagRole",
+    ]
+    resources = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.project_name}-iot-rule-role"]
+  }
+
+  statement {
     sid = "ManageLogGroup"
     actions = [
       "logs:CreateLogGroup",
@@ -133,6 +176,21 @@ data "aws_iam_policy_document" "github_actions_permissions" {
       "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.project_name}-api",
       "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.project_name}-api:*"
       ]
+  }
+
+  statement {
+    sid = "ManageIoTErrorLogGroup"
+    actions = [
+      "logs:CreateLogGroup",
+      "logs:DeleteLogGroup",
+      "logs:DescribeLogGroups",
+      "logs:PutRetentionPolicy",
+      "logs:TagResource",
+    ]
+    resources = [
+      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/iot/${var.project_name}-sensor-ingest-errors",
+      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/iot/${var.project_name}-sensor-ingest-errors:*",
+    ]
   }
 
   statement {

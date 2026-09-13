@@ -24,6 +24,14 @@
         <p class="eyebrow">MQTT / AWS IoT Core</p>
         <h2>{{msg "sensor_guide.title"}}</h2>
         <p class="panel-subtitle">{{msg "sensor_guide.intro"}}</p>
+        <form id="sensor-form" class="sensor-form">
+          <div class="field-group">
+            <label for="sensor-name">Nombre del sensor</label>
+            <input id="sensor-name" name="name" type="text" maxlength="64" pattern="[A-Za-z0-9][A-Za-z0-9_-]{0,63}" placeholder="tanque-principal" required>
+          </div>
+          <button class="button primary" type="submit">Crear sensor y generar credenciales</button>
+          <p id="sensor-status" class="hint-text" role="status"></p>
+        </form>
       </section>
 
       <section class="panel">
@@ -53,7 +61,7 @@
           </div>
           <div class="guide-data-item">
             <span>{{msg "sensor_guide.topic"}}</span>
-            <code>evap/{owner_user_id}/{device_id}/readings</code>
+            <code id="sensor-topic">evap/{owner_user_id}/{device_id}/readings</code>
           </div>
           <div class="guide-data-item guide-data-wide">
             <span>{{msg "sensor_guide.auth"}}</span>
@@ -87,7 +95,19 @@
           <li>{{msg "sensor_guide.step_three"}}</li>
         </ol>
       </section>
+      <section id="sensor-credentials" class="panel credentials-panel" hidden>
+        <div class="panel-header">
+          <h3>Credenciales generadas</h3>
+          <p class="panel-subtitle">Guarda estos datos ahora. La clave privada solo se muestra una vez.</p>
+        </div>
+        <div class="guide-data-grid">
+          <div class="guide-data-item guide-data-wide"><span>Thing</span><code id="created-thing"></code></div>
+          <div class="guide-data-item guide-data-wide"><span>Certificado X.509</span><textarea id="certificate-pem" readonly></textarea></div>
+          <div class="guide-data-item guide-data-wide"><span>Clave privada</span><textarea id="private-key" readonly></textarea></div>
+        </div>
+      </section>
     </main>
   </div>
+  <script src="/static/js/sensor-guide.js"></script>
 </body>
 </html>

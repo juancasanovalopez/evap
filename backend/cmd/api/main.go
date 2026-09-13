@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/iot"
 	"github.com/awslabs/aws-lambda-go-api-proxy/httpadapter"
 
 	appauth "evap-backend/internal/auth"
@@ -33,12 +34,15 @@ func main() {
 	}
 
 	repo := store.NewDynamoDBUserRepository(dynamodb.NewFromConfig(awsCfg), cfg.DynamoTableName)
+	iotClient := iot.NewFromConfig(awsCfg)
 	issuer := appauth.NewTokenIssuer(cfg.JWTSigningKey, router.DefaultJWTTTL)
 
 	handler := router.New(router.Deps{
 		Config:        cfg,
 		Users:         repo,
 		Issuer:        issuer,
+		IoT:           iotClient,
+		IoTPolicyName: "evap-iot-device-policy",
 		SecureCookies: true,
 	})
 

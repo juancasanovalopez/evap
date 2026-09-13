@@ -17,6 +17,7 @@ import (
 // Config holds all values needed by the application at runtime.
 type Config struct {
 	DynamoTableName    string
+	IoTEndpoint        string
 	AllowedCORSOrigins []string
 
 	GoogleClientID     string
@@ -52,6 +53,7 @@ func Load(ctx context.Context) (*Config, error) {
 func load(ctx context.Context) (*Config, error) {
 	cfg := &Config{
 		DynamoTableName:      mustEnv("DYNAMODB_TABLE_NAME"),
+		IoTEndpoint:          mustEnv("IOT_ENDPOINT"),
 		AllowedCORSOrigins:   splitCSV(os.Getenv("ALLOWED_CORS_ORIGINS")),
 		OAuthRedirectBaseURL: mustEnv("OAUTH_REDIRECT_BASE_URL"),
 	}

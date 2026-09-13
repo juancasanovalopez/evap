@@ -39,6 +39,17 @@ data "aws_iam_policy_document" "lambda_permissions" {
   }
 
   statement {
+    sid = "ProvisionOwnSensors"
+    actions = [
+      "iot:CreateKeysAndCertificate",
+      "iot:CreateThing",
+      "iot:AttachThingPrincipal",
+      "iot:AttachPolicy",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
     sid       = "ReadOAuthSecrets"
     actions   = ["ssm:GetParameter", "ssm:GetParameters"]
     resources = [for p in aws_ssm_parameter.oauth_secrets : p.arn]

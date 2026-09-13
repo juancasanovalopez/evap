@@ -90,6 +90,7 @@
       locationStatus.textContent = 'Geolocalización no disponible en este navegador.';
       return;
     }
+    geolocateBtn.disabled = true;
     locationStatus.textContent = 'Buscando tu ubicación…';
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -98,10 +99,18 @@
         marker.setLatLng([latitude, longitude]);
         onLocationChange(latitude, longitude);
         locationStatus.textContent = '';
+        geolocateBtn.disabled = false;
       },
-      () => {
-        locationStatus.textContent = 'No se pudo obtener tu ubicación. Usa el mapa manualmente.';
+      (error) => {
+        const messages = {
+          1: 'Permiso de ubicación denegado. Permítelo en el navegador o usa el mapa manualmente.',
+          2: 'No se pudo determinar tu ubicación. Comprueba la señal y vuelve a intentarlo.',
+          3: 'La búsqueda de ubicación tardó demasiado. Vuelve a intentarlo.',
+        };
+        locationStatus.textContent = messages[error.code] || 'No se pudo obtener tu ubicación. Usa el mapa manualmente.';
+        geolocateBtn.disabled = false;
       },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 },
     );
   });
 

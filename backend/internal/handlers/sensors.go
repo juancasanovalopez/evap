@@ -21,6 +21,7 @@ type IoTClient interface {
 	CreateKeysAndCertificate(context.Context, *iot.CreateKeysAndCertificateInput, ...func(*iot.Options)) (*iot.CreateKeysAndCertificateOutput, error)
 	AttachThingPrincipal(context.Context, *iot.AttachThingPrincipalInput, ...func(*iot.Options)) (*iot.AttachThingPrincipalOutput, error)
 	AttachPolicy(context.Context, *iot.AttachPolicyInput, ...func(*iot.Options)) (*iot.AttachPolicyOutput, error)
+	ListThings(context.Context, *iot.ListThingsInput, ...func(*iot.Options)) (*iot.ListThingsOutput, error)
 }
 
 type createSensorRequest struct {
@@ -91,4 +92,36 @@ func CreateSensorHandler(client IoTClient, policyName, endpoint string) http.Han
 
 func ownerSlug(owner string) string {
 	return strings.NewReplacer("#", "-", "/", "-", ":", "-").Replace(owner)
+}
+
+type sensorSummary struct {
+	ThingName string `json:"thing_name"`
+}
+
+// ListSensorsHandler returns the sensors (AWS IoT Things) belonging to the
+// authenticated user, for use in diagnostics.
+func ListSensorsHandler(client IoTClient) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		claims, ok := middleware.ClaimsFromContext(r.Context())
+		if !ok {
+			writeLocalizedError(w, r, http.StatusUnauthorized, i18n.AuthUnauthorized)
+			return
+		}
+
+		ownerID := ownerSlug(claims.Subject)
+		out, err := client.ListThings(r.Context(), &iot.ListThingsInput{
+			AttributeName:  aws.String("owner_user_id"),
+			AttributeValue: aws.String(ownerID),
+		})
+		if err != nil {
+			writeJSON(w, http.StatusBadGateway, map[string]string{"error": "could not list sensors"})
+			return
+		}
+
+		sensors := make([]sensorSummary, 0, len(out.Things))
+		for _, thing := range out.Things {
+			sensors = append(sensors, sensorSummary{ThingName: aws.ToString(thing.ThingName)})
+		}
+		writeJSON(w, http.StatusOK, sensors)
+	}
 }

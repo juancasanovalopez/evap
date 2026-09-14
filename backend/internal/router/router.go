@@ -77,6 +77,7 @@ func New(deps Deps) *chi.Mux {
 		r.Get("/private", handlers.Private)
 		r.Get("/simulate", handlers.Simulate)
 		r.Get("/readings", handlers.ReadingsHandler(deps.Readings))
+		r.Get("/sensors", handlers.ListSensorsHandler(deps.IoT))
 		r.Post("/sensors", handlers.CreateSensorHandler(deps.IoT, deps.IoTPolicyName, deps.Config.IoTEndpoint))
 	})
 

@@ -107,6 +107,31 @@
           <div class="guide-data-item guide-data-wide"><span>Clave privada</span><textarea id="private-key" readonly></textarea></div>
         </div>
       </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h3>{{msg "sensor_guide.diagnostics_title"}}</h3>
+          <p class="panel-subtitle">{{msg "sensor_guide.diagnostics_help"}}</p>
+        </div>
+
+        <h4>{{msg "sensor_guide.sensors_title"}}</h4>
+        <p id="sensors-status" class="hint-text" role="status" aria-live="polite"></p>
+        <ul id="sensors-list" class="sensors-list"></ul>
+
+        <h4>{{msg "sensor_guide.messages_title"}}</h4>
+        <p class="panel-subtitle">{{msg "sensor_guide.messages_help"}}</p>
+        <p id="messages-status" class="hint-text" role="status" aria-live="polite"></p>
+        <table class="readings-table">
+          <thead>
+            <tr>
+              <th>{{msg "sensor_guide.messages_device"}}</th>
+              <th>{{msg "sensor_guide.messages_temperature"}}</th>
+              <th>{{msg "sensor_guide.messages_timestamp"}}</th>
+            </tr>
+          </thead>
+          <tbody id="messages-body"></tbody>
+        </table>
+      </section>
     </main>
   </div>
   <script src="/static/js/sensor-guide.js"></script>

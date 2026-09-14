@@ -40,6 +40,7 @@ type Reading struct {
 
 // ReadingRepository retrieves sensor readings scoped to their owner.
 type ReadingRepository interface {
-	// ListRecentByOwner returns up to limit readings for ownerUserID, most recent first.
-	ListRecentByOwner(ctx context.Context, ownerUserID string, limit int32) ([]Reading, error)
+	// ListRecentByOwner returns up to limit readings for ownerUserID with a
+	// timestamp at or after since, most recent first.
+	ListRecentByOwner(ctx context.Context, ownerUserID string, limit int32, since time.Time) ([]Reading, error)
 }

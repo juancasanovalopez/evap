@@ -51,6 +51,7 @@ data "aws_iam_policy_document" "lambda_permissions" {
       "iot:CreateThing",
       "iot:AttachThingPrincipal",
       "iot:AttachPolicy",
+      "iot:ListThings",
     ]
     resources = ["*"]
   }

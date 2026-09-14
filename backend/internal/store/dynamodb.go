@@ -152,14 +152,19 @@ type readingItem struct {
 	IngestedAt  string  `dynamodbav:"ingested_at"`
 }
 
-// ListRecentByOwner returns up to limit readings for ownerUserID, most recent first.
-func (r *DynamoDBReadingRepository) ListRecentByOwner(ctx context.Context, ownerUserID string, limit int32) ([]Reading, error) {
+// ListRecentByOwner returns up to limit readings for ownerUserID with a
+// timestamp at or after since, most recent first.
+func (r *DynamoDBReadingRepository) ListRecentByOwner(ctx context.Context, ownerUserID string, limit int32, since time.Time) ([]Reading, error) {
 	out, err := r.client.Query(ctx, &dynamodb.QueryInput{
 		TableName:              aws.String(r.tableName),
 		IndexName:              aws.String(r.indexName),
-		KeyConditionExpression: aws.String("owner_user_id = :owner"),
+		KeyConditionExpression: aws.String("owner_user_id = :owner AND #ts >= :since"),
+		ExpressionAttributeNames: map[string]string{
+			"#ts": "timestamp",
+		},
 		ExpressionAttributeValues: map[string]types.AttributeValue{
 			":owner": &types.AttributeValueMemberS{Value: ownerUserID},
+			":since": &types.AttributeValueMemberS{Value: since.UTC().Format(time.RFC3339)},
 		},
 		ScanIndexForward: aws.Bool(false),
 		Limit:            aws.Int32(limit),

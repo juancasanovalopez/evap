@@ -57,15 +57,21 @@ func NewMemoryReadingRepository() *MemoryReadingRepository {
 	return &MemoryReadingRepository{}
 }
 
-// ListRecentByOwner returns up to limit readings for ownerUserID, most recent first.
-func (r *MemoryReadingRepository) ListRecentByOwner(_ context.Context, ownerUserID string, limit int32) ([]Reading, error) {
+// ListRecentByOwner returns up to limit readings for ownerUserID with a
+// timestamp at or after since, most recent first.
+func (r *MemoryReadingRepository) ListRecentByOwner(_ context.Context, ownerUserID string, limit int32, since time.Time) ([]Reading, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	matches := make([]Reading, 0, len(r.Readings))
 	for _, reading := range r.Readings {
-		if reading.OwnerUserID == ownerUserID {
-			matches = append(matches, reading)
+		if reading.OwnerUserID != ownerUserID {
+			continue
 		}
+		ts, err := time.Parse(time.RFC3339, reading.Timestamp)
+		if err != nil || ts.Before(since) {
+			continue
+		}
+		matches = append(matches, reading)
 	}
 	if int32(len(matches)) > limit {
 		matches = matches[:limit]

@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"evap-backend/internal/i18n"
 	"evap-backend/internal/middleware"
@@ -12,6 +13,8 @@ import (
 const (
 	defaultReadingsLimit = 20
 	maxReadingsLimit     = 100
+	// readingsMaxAge caps diagnostics to the last 24h, regardless of limit.
+	readingsMaxAge = 24 * time.Hour
 )
 
 // ReadingsHandler returns the authenticated user's most recent sensor
@@ -32,7 +35,8 @@ func ReadingsHandler(repo store.ReadingRepository) http.HandlerFunc {
 		}
 
 		ownerID := ownerSlug(claims.Subject)
-		readings, err := repo.ListRecentByOwner(r.Context(), ownerID, limit)
+		since := time.Now().Add(-readingsMaxAge)
+		readings, err := repo.ListRecentByOwner(r.Context(), ownerID, limit, since)
 		if err != nil {
 			writeJSON(w, http.StatusBadGateway, map[string]string{"error": "could not fetch sensor readings"})
 			return

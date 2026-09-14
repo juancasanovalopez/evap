@@ -39,6 +39,12 @@ data "aws_iam_policy_document" "lambda_permissions" {
   }
 
   statement {
+    sid       = "ReadSensorReadings"
+    actions   = ["dynamodb:Query"]
+    resources = [aws_dynamodb_table.sensor_readings.arn, "${aws_dynamodb_table.sensor_readings.arn}/index/*"]
+  }
+
+  statement {
     sid = "ProvisionOwnSensors"
     actions = [
       "iot:CreateKeysAndCertificate",

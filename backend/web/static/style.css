@@ -264,6 +264,11 @@ input:focus {
 .result-line span { color: var(--muted); font-size: 0.88rem; }
 .result-line strong { color: var(--accent-dark); font-size: 1.05rem; text-align: right; }
 
+.readings-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+.readings-table th, .readings-table td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); font-size: 0.88rem; }
+.readings-table th { color: var(--muted); font-weight: 600; }
+.readings-table td:nth-child(2), .readings-table th:nth-child(2) { text-align: right; }
+
 .charts-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

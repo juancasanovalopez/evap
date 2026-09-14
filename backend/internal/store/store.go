@@ -28,3 +28,18 @@ type UserRepository interface {
 	// Get retrieves a user profile by provider and provider-specific ID.
 	Get(ctx context.Context, provider, providerID string) (User, error)
 }
+
+// Reading is a single sensor reading ingested by the AWS IoT topic rule.
+type Reading struct {
+	DeviceID    string  `json:"device_id"`
+	OwnerUserID string  `json:"owner_user_id"`
+	Timestamp   string  `json:"timestamp"`
+	Temperature float64 `json:"temperature"`
+	IngestedAt  string  `json:"ingested_at"`
+}
+
+// ReadingRepository retrieves sensor readings scoped to their owner.
+type ReadingRepository interface {
+	// ListRecentByOwner returns up to limit readings for ownerUserID, most recent first.
+	ListRecentByOwner(ctx context.Context, ownerUserID string, limit int32) ([]Reading, error)
+}

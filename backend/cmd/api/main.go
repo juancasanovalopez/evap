@@ -34,12 +34,14 @@ func main() {
 	}
 
 	repo := store.NewDynamoDBUserRepository(dynamodb.NewFromConfig(awsCfg), cfg.DynamoTableName)
+	readingsRepo := store.NewDynamoDBReadingRepository(dynamodb.NewFromConfig(awsCfg), cfg.SensorReadingsTableName, "owner_user_id-timestamp-index")
 	iotClient := iot.NewFromConfig(awsCfg)
 	issuer := appauth.NewTokenIssuer(cfg.JWTSigningKey, router.DefaultJWTTTL)
 
 	handler := router.New(router.Deps{
 		Config:        cfg,
 		Users:         repo,
+		Readings:      readingsRepo,
 		Issuer:        issuer,
 		IoT:           iotClient,
 		IoTPolicyName: "evap-iot-device-policy",

@@ -45,3 +45,30 @@ func (r *MemoryUserRepository) Upsert(_ context.Context, u User) (User, error) {
 	r.users[pk] = u
 	return u, nil
 }
+
+// MemoryReadingRepository is an in-memory ReadingRepository used by unit tests.
+type MemoryReadingRepository struct {
+	mu       sync.Mutex
+	Readings []Reading
+}
+
+// NewMemoryReadingRepository builds an empty in-memory repository.
+func NewMemoryReadingRepository() *MemoryReadingRepository {
+	return &MemoryReadingRepository{}
+}
+
+// ListRecentByOwner returns up to limit readings for ownerUserID, most recent first.
+func (r *MemoryReadingRepository) ListRecentByOwner(_ context.Context, ownerUserID string, limit int32) ([]Reading, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	matches := make([]Reading, 0, len(r.Readings))
+	for _, reading := range r.Readings {
+		if reading.OwnerUserID == ownerUserID {
+			matches = append(matches, reading)
+		}
+	}
+	if int32(len(matches)) > limit {
+		matches = matches[:limit]
+	}
+	return matches, nil
+}

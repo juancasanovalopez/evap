@@ -237,4 +237,45 @@
   });
 
   runSimulation();
+
+  const readingsStatus = document.getElementById('readings-status');
+  const readingsBody = document.getElementById('readings-body');
+
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    }[c]));
+  }
+
+  async function loadReadings() {
+    if (!readingsBody) return;
+    try {
+      const res = await fetch('/api/v1/readings?limit=20', { credentials: 'include' });
+      if (res.status === 401) {
+        window.location.href = '/login';
+        return;
+      }
+      const data = await res.json();
+      if (!res.ok) {
+        readingsStatus.textContent = data.error || 'No se pudieron cargar las lecturas del sensor.';
+        return;
+      }
+      readingsStatus.textContent = '';
+      readingsBody.innerHTML = '';
+      if (!Array.isArray(data) || data.length === 0) {
+        readingsStatus.textContent = 'Todavía no hay lecturas. Añade un sensor y empieza a publicar datos.';
+        return;
+      }
+      for (const reading of data) {
+        const row = document.createElement('tr');
+        row.innerHTML = `<td>${escapeHtml(reading.device_id)}</td><td>${escapeHtml(reading.temperature)}</td><td>${escapeHtml(reading.timestamp)}</td>`;
+        readingsBody.appendChild(row);
+      }
+    } catch (_err) {
+      readingsStatus.textContent = 'Fallo de red al contactar con el servidor.';
+    }
+  }
+
+  loadReadings();
+  setInterval(loadReadings, 30000);
 })();

@@ -124,3 +124,64 @@ func itemToUser(item userItem) User {
 		UpdatedAt:  item.UpdatedAt,
 	}
 }
+
+// DynamoDBQueryClient is the subset of the DynamoDB API needed to query readings.
+type DynamoDBQueryClient interface {
+	Query(ctx context.Context, params *dynamodb.QueryInput, optFns ...func(*dynamodb.Options)) (*dynamodb.QueryOutput, error)
+}
+
+// DynamoDBReadingRepository implements ReadingRepository against the
+// sensor_readings table, querying the owner_user_id-timestamp GSI so a user
+// can only ever see their own readings.
+type DynamoDBReadingRepository struct {
+	client    DynamoDBQueryClient
+	tableName string
+	indexName string
+}
+
+// NewDynamoDBReadingRepository builds a repository backed by the given table and GSI.
+func NewDynamoDBReadingRepository(client DynamoDBQueryClient, tableName, indexName string) *DynamoDBReadingRepository {
+	return &DynamoDBReadingRepository{client: client, tableName: tableName, indexName: indexName}
+}
+
+type readingItem struct {
+	DeviceID    string  `dynamodbav:"device_id"`
+	OwnerUserID string  `dynamodbav:"owner_user_id"`
+	Timestamp   string  `dynamodbav:"timestamp"`
+	Temperature float64 `dynamodbav:"temperature"`
+	IngestedAt  string  `dynamodbav:"ingested_at"`
+}
+
+// ListRecentByOwner returns up to limit readings for ownerUserID, most recent first.
+func (r *DynamoDBReadingRepository) ListRecentByOwner(ctx context.Context, ownerUserID string, limit int32) ([]Reading, error) {
+	out, err := r.client.Query(ctx, &dynamodb.QueryInput{
+		TableName:              aws.String(r.tableName),
+		IndexName:              aws.String(r.indexName),
+		KeyConditionExpression: aws.String("owner_user_id = :owner"),
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":owner": &types.AttributeValueMemberS{Value: ownerUserID},
+		},
+		ScanIndexForward: aws.Bool(false),
+		Limit:            aws.Int32(limit),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("dynamodb query readings: %w", err)
+	}
+
+	items := make([]readingItem, 0, len(out.Items))
+	if err := attributevalue.UnmarshalListOfMaps(out.Items, &items); err != nil {
+		return nil, fmt.Errorf("dynamodb unmarshal readings: %w", err)
+	}
+
+	readings := make([]Reading, 0, len(items))
+	for _, item := range items {
+		readings = append(readings, Reading{
+			DeviceID:    item.DeviceID,
+			OwnerUserID: item.OwnerUserID,
+			Timestamp:   item.Timestamp,
+			Temperature: item.Temperature,
+			IngestedAt:  item.IngestedAt,
+		})
+	}
+	return readings, nil
+}

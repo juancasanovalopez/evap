@@ -22,6 +22,7 @@ import (
 type Deps struct {
 	Config        *config.Config
 	Users         store.UserRepository
+	Readings      store.ReadingRepository
 	Issuer        *auth.TokenIssuer
 	IoT           handlers.IoTClient
 	IoTPolicyName string
@@ -75,6 +76,7 @@ func New(deps Deps) *chi.Mux {
 		r.Use(appmw.JWTAuth(deps.Issuer))
 		r.Get("/private", handlers.Private)
 		r.Get("/simulate", handlers.Simulate)
+		r.Get("/readings", handlers.ReadingsHandler(deps.Readings))
 		r.Post("/sensors", handlers.CreateSensorHandler(deps.IoT, deps.IoTPolicyName, deps.Config.IoTEndpoint))
 	})
 

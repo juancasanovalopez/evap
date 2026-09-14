@@ -158,6 +158,25 @@
         </div>
       </section>
 
+      <section class="panel">
+        <div class="panel-header">
+          <h3>{{msg "dashboard.readings_title"}}</h3>
+          <p class="panel-subtitle">{{msg "dashboard.readings_help"}}</p>
+        </div>
+
+        <p id="readings-status" class="hint-text" role="status" aria-live="polite"></p>
+        <table class="readings-table">
+          <thead>
+            <tr>
+              <th>{{msg "dashboard.readings_device"}}</th>
+              <th>{{msg "dashboard.readings_temperature"}}</th>
+              <th>{{msg "dashboard.readings_timestamp"}}</th>
+            </tr>
+          </thead>
+          <tbody id="readings-body"></tbody>
+        </table>
+      </section>
+
 
     </main>
   </div>

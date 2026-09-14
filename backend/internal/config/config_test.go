@@ -30,6 +30,7 @@ func setEnv(t *testing.T, key, value string) {
 
 func TestLoad_FallsBackToPlainEnvVarsWithoutSSMPrefix(t *testing.T) {
 	setEnv(t, "DYNAMODB_TABLE_NAME", "users")
+	setEnv(t, "SENSOR_READINGS_TABLE_NAME", "readings")
 	setEnv(t, "OAUTH_REDIRECT_BASE_URL", "https://api.example.com")
 	setEnv(t, "ALLOWED_CORS_ORIGINS", "https://a.example.com, https://b.example.com")
 	setEnv(t, "GOOGLE_CLIENT_ID", "gid")

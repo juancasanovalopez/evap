@@ -175,13 +175,7 @@ func (r *DynamoDBReadingRepository) ListRecentByOwner(ctx context.Context, owner
 
 	readings := make([]Reading, 0, len(items))
 	for _, item := range items {
-		readings = append(readings, Reading{
-			DeviceID:    item.DeviceID,
-			OwnerUserID: item.OwnerUserID,
-			Timestamp:   item.Timestamp,
-			Temperature: item.Temperature,
-			IngestedAt:  item.IngestedAt,
-		})
+		readings = append(readings, Reading(item))
 	}
 	return readings, nil
 }

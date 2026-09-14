@@ -41,7 +41,7 @@
         <div class="guide-data-grid">
           <div class="guide-data-item">
             <span>{{msg "sensor_guide.endpoint"}}</span>
-            <code>ahcs6sx972h5m-ats.iot.eu-south-2.amazonaws.com</code>
+            <code>{{.IoTEndpoint}}</code>
           </div>
           <div class="guide-data-item">
             <span>{{msg "sensor_guide.port"}}</span>
@@ -65,7 +65,7 @@
           </div>
           <div class="guide-data-item guide-data-wide">
             <span>{{msg "sensor_guide.auth"}}</span>
-            <code>Certificado X.509 + clave privada + CA raíz de Amazon</code>
+            <code>Certificado X.509 + clave privada + <a href="/certs/amazon-root-ca1.pem" download>CA raíz de Amazon (descargar)</a></code>
           </div>
           <div class="guide-data-item guide-data-wide">
             <span>{{msg "sensor_guide.interval"}}</span>

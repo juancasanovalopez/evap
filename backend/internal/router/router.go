@@ -63,7 +63,8 @@ func New(deps Deps) *chi.Mux {
 		r.Use(appmw.OptionalJWTAuth(deps.Issuer))
 		r.Get("/", handlers.Index)
 	})
-	r.With(appmw.JWTAuth(deps.Issuer)).Get("/sensor-guide", handlers.SensorGuide)
+	r.With(appmw.JWTAuth(deps.Issuer)).Get("/sensor-guide", handlers.SensorGuide(deps.Config.IoTEndpoint))
+	r.Get("/certs/amazon-root-ca1.pem", handlers.RootCA)
 	r.Get("/login", handlers.Login)
 	r.Post("/auth/logout", authHandler.Logout)
 

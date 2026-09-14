@@ -44,7 +44,7 @@ func TestSensorGuide_AnonymousRedirectsToLogin(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/sensor-guide", nil)
 	rec := httptest.NewRecorder()
 
-	SensorGuide(rec, req)
+	SensorGuide("iot.example.com")(rec, req)
 
 	require.Equal(t, http.StatusFound, rec.Code)
 	require.Equal(t, "/login", rec.Header().Get("Location"))
@@ -55,7 +55,7 @@ func TestSensorGuide_AuthenticatedRendersConnectionData(t *testing.T) {
 	token, err := issuer.Issue("google#1", auth.Claims{Provider: "google", Name: "Ada"})
 	require.NoError(t, err)
 
-	handler := appmw.JWTAuth(issuer)(http.HandlerFunc(SensorGuide))
+	handler := appmw.JWTAuth(issuer)(SensorGuide("iot.example.com"))
 	req := httptest.NewRequest(http.MethodGet, "/sensor-guide", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 	rec := httptest.NewRecorder()
@@ -63,7 +63,7 @@ func TestSensorGuide_AuthenticatedRendersConnectionData(t *testing.T) {
 	handler.ServeHTTP(rec, req)
 
 	require.Equal(t, http.StatusOK, rec.Code)
-	require.Contains(t, rec.Body.String(), "ahcs6sx972h5m-ats.iot.eu-south-2.amazonaws.com")
+	require.Contains(t, rec.Body.String(), "iot.example.com")
 	require.Contains(t, rec.Body.String(), "evap/{owner_user_id}/{device_id}/readings")
 }
 

@@ -14,6 +14,12 @@ type indexPageData struct {
 	Language string
 }
 
+type sensorGuidePageData struct {
+	Name        string
+	Language    string
+	IoTEndpoint string
+}
+
 type loginPageData struct {
 	Language string
 }
@@ -42,17 +48,25 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// SensorGuide renders the authenticated MQTT sensor setup guide.
-func SensorGuide(w http.ResponseWriter, r *http.Request) {
-	claims, ok := middleware.ClaimsFromContext(r.Context())
-	if !ok {
-		http.Redirect(w, r, "/login", http.StatusFound)
-		return
-	}
-	data := indexPageData{Name: claims.Name, Language: middleware.LanguageFromContext(r.Context()).String()}
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := pageTemplateFor(r).ExecuteTemplate(w, "sensor-guide.html", data); err != nil {
-		writeLocalizedError(w, r, http.StatusInternalServerError, i18n.PageRenderFailed)
+// SensorGuide renders the authenticated MQTT sensor setup guide. The broker
+// endpoint is injected from config so users never need to look it up in the
+// AWS console themselves.
+func SensorGuide(iotEndpoint string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		claims, ok := middleware.ClaimsFromContext(r.Context())
+		if !ok {
+			http.Redirect(w, r, "/login", http.StatusFound)
+			return
+		}
+		data := sensorGuidePageData{
+			Name:        claims.Name,
+			Language:    middleware.LanguageFromContext(r.Context()).String(),
+			IoTEndpoint: iotEndpoint,
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		if err := pageTemplateFor(r).ExecuteTemplate(w, "sensor-guide.html", data); err != nil {
+			writeLocalizedError(w, r, http.StatusInternalServerError, i18n.PageRenderFailed)
+		}
 	}
 }
 
